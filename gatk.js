@@ -1,28 +1,30 @@
 /*!
- * GA event tracker JavaScript Library v0.0.7
+ * GA event tracker JavaScript Library v0.0.8
  * http://singleview.co.kr/
  *
  * Copyright 2015, 2015 singleview.co.kr
  * Released under the commercial license
  *
- * Date: 2015-25-02T15:27Z
+ * Date: 2015-29-02T15:27Z
  */
 
-var version = '0.0.7';
+var version = '0.0.8';
 var 
-	g_sPrefixViewDetail = 'vd',
-	g_sPrefixBuyImmediately = 'bi',
-	g_sPrefixAddToCart = 'atc',
-	g_sPrefixRemoveFromCart = 'rfc',
-	g_sPrefixCheckoutSelected = 'cs',
-	g_sPrefixCheckoutAll = 'ca',
-	g_sPrefixSettlement = 'setl',
-	g_sPrefixPurchased = 'pur',
-	g_sPrefixRefunded = 'ref';
+	_g_sPrefixViewDetail = 'vd',
+	_g_sPrefixBuyImmediately = 'bi',
+	_g_sPrefixAddToCart = 'atc',
+	_g_sPrefixRemoveFromCart = 'rfc',
+	_g_sPrefixCheckoutSelected = 'cs',
+	_g_sPrefixCheckoutAll = 'ca',
+	_g_sPrefixSettlement = 'setl',
+	_g_sPrefixPurchased = 'pur',
+	_g_sPrefixRefunded = 'ref';
 
-var g_bEcRequired = false;
+var _g_bEcRequired = false;
+var _g_bSentConversionPageView = false;
 var _g_aImageElement = new Array();
 
+/************* temporary methods begin *************/
 function setCookie( cname, cvalue, exdays )
 {
 	var d = new Date();
@@ -56,6 +58,19 @@ function checkCookie()
 		user = prompt( 'Please enter your name:', '');
 		if( user != '' && user != null ) 
 			setCookie( 'username', user, 365 );
+	}
+}
+/************* temporary methods end *************/
+
+function checkNonEcConversionGatk( sVirtualUrl, sPageTitle ) 
+{
+	if( !_g_bSentConversionPageView )
+	{
+		ga('send', 'pageview', {
+		  'page': sVirtualUrl, // example '/thankyou.html'
+		  'title': sPageTitle
+		});
+		_g_bSentConversionPageView = true;
 	}
 }
 
@@ -200,9 +215,9 @@ var gatkList =
 
 	init : function( sListTitle, nCurrentPage, nItemsPerPag )
 	{
-		if( !g_bEcRequired )
+		if( !_g_bEcRequired )
 		{
-			g_bEcRequired = true;
+			_g_bEcRequired = true;
 			ga('require', 'ec');
 		}
 		if( nCurrentPage === null || nCurrentPage === undefined || nCurrentPage.length == 0 )
@@ -254,7 +269,7 @@ var gatkList =
 					'position': this._g_oProductInfo[i].position // 'position' indicates the product position in the list.
 				});
 				ga('ec:setAction', 'click', { list: this._g_sListTitle } );
-				_sendGaEventWithoutInteraction( 'link', 'clicked', g_sPrefixViewDetail + '_' + this._g_oProductInfo[i].id+'_'+this._g_oProductInfo[i].name, '' );
+				_sendGaEventWithoutInteraction( 'link', 'clicked', _g_sPrefixViewDetail + '_' + this._g_oProductInfo[i].id+'_'+this._g_oProductInfo[i].name, '' );
 				break;
 			}
 		}
@@ -272,9 +287,9 @@ var gatkDetail =
 
 	init : function()
 	{
-		if( !g_bEcRequired )
+		if( !_g_bEcRequired )
 		{
-			g_bEcRequired = true;
+			_g_bEcRequired = true;
 			ga('require', 'ec');
 		}
 		return true;
@@ -300,13 +315,13 @@ var gatkDetail =
 	patchBuyImmediately : function( nTotalQuantity )
 	{
 		var nTotalPrice = nTotalQuantity * this._g_oProductInfo[0].price;
-		_sendGaEventWithoutInteraction( 'button', 'clicked', g_sPrefixBuyImmediately + '_' + this._g_oProductInfo[0].id + '_' + this._g_oProductInfo[0].name, nTotalPrice );
+		_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixBuyImmediately + '_' + this._g_oProductInfo[0].id + '_' + this._g_oProductInfo[0].name, nTotalPrice );
 		return true;
 	},
 	patchAddToCart : function( nTotalQuantity )
 	{
 		var nTotalPrice = nTotalQuantity * this._g_oProductInfo[0].price;
-		_sendGaEventWithoutInteraction( 'button', 'clicked', g_sPrefixAddToCart + '_' + this._g_oProductInfo[0].id + '_' + this._g_oProductInfo[0].name, nTotalPrice );
+		_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixAddToCart + '_' + this._g_oProductInfo[0].id + '_' + this._g_oProductInfo[0].name, nTotalPrice );
 		ga('ec:addProduct', {
 			'id': this._g_oProductInfo[0].id, // Product ID (string).
 			'name': this._g_oProductInfo[0].name, // Product name (string).
@@ -326,9 +341,9 @@ var gatkCart =
 	_g_oProductInfo : [],
 	init : function()
 	{
-		if( !g_bEcRequired )
+		if( !_g_bEcRequired )
 		{
-			g_bEcRequired = true;
+			_g_bEcRequired = true;
 			ga('require', 'ec');
 		}
 		return true;
@@ -361,7 +376,7 @@ var gatkCart =
 						'quantity': this._g_oProductInfo[i].quantity // Product quantity (number).
 					});
 					this._sendCheckoutAction();
-					_sendGaEventWithoutInteraction( 'checkout', 'started', g_sPrefixCheckoutSelected + '_' + this._g_oProductInfo[i].id+'_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
+					_sendGaEventWithoutInteraction( 'checkout', 'started', _g_sPrefixCheckoutSelected + '_' + this._g_oProductInfo[i].id+'_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
 					aCartSrl.shift();
 				}
 			}
@@ -386,7 +401,7 @@ var gatkCart =
 			nTotalPrice += this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity;
 		}
 		this._sendCheckoutAction();
-		_sendGaEventWithoutInteraction( 'checkout', 'started', g_sPrefixCheckoutAll, nTotalPrice ); // Send data using an event after set ec-action
+		_sendGaEventWithoutInteraction( 'checkout', 'started', _g_sPrefixCheckoutAll, nTotalPrice ); // Send data using an event after set ec-action
 	},
 	removeFromCart : function( aCartSrl ) //nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, nTotalPrice ) 
 	{
@@ -412,7 +427,7 @@ var gatkCart =
 					});
 					nTotalPrice = ( this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity ) * -1;
 					ga('ec:setAction', 'remove');
-					_sendGaEventWithoutInteraction( 'button', 'clicked', g_sPrefixRemoveFromCart + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nTotalPrice );
+					_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nTotalPrice );
 					aCartSrl.shift();
 				}
 			}
@@ -453,9 +468,9 @@ var gatkSettlement =
 	_g_oProductInfo : [],
 	init : function()
 	{
-		if( !g_bEcRequired )
+		if( !_g_bEcRequired )
 		{
-			g_bEcRequired = true;
+			_g_bEcRequired = true;
 			ga('require', 'ec');
 		}
 		return true;
@@ -485,7 +500,7 @@ var gatkSettlement =
 			nTotalPrice += this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity;
 		}
 		this._sendCheckoutAction();
-		_sendGaEventWithoutInteraction( 'checkout', 'started', g_sPrefixSettlement, nTotalPrice ); // Send data using an event after set ec-action
+		_sendGaEventWithoutInteraction( 'checkout', 'started', _g_sPrefixSettlement, nTotalPrice ); // Send data using an event after set ec-action
 	},
 
 	_sendCheckoutAction : function( nStepNumber, sOption )
@@ -523,9 +538,9 @@ var gatkPurchase =
 	_g_oProductInfo : [],
 	init : function()
 	{
-		if( !g_bEcRequired )
+		if( !_g_bEcRequired )
 		{
-			g_bEcRequired = true;
+			_g_bEcRequired = true;
 			ga('require', 'ec');
 		}
 		return true;
@@ -562,7 +577,7 @@ var gatkPurchase =
 				'coupon': sCoupon            // Transaction coupon (string).
 			});
 
-			_sendGaEventWithoutInteraction( 'checkout', 'purchased', g_sPrefixPurchased + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
+			_sendGaEventWithoutInteraction( 'checkout', 'purchased', _g_sPrefixPurchased + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
 		}
 	}
 }
@@ -572,9 +587,9 @@ var gatkMypage =
 	_g_oProductInfo : [],
 	init : function()
 	{
-		if( !g_bEcRequired )
+		if( !_g_bEcRequired )
 		{
-			g_bEcRequired = true;
+			_g_bEcRequired = true;
 			ga('require', 'ec');
 		}
 		return true;
@@ -598,7 +613,7 @@ var gatkMypage =
 			  'id': this._g_oProductInfo[i].id, // Product ID is required for partial refund.
 			  'quantity': this._g_oProductInfo[i].quantity // Quantity is required for partial refund.
 			});
-			_sendGaEventWithoutInteraction( 'checkout', 'refunded', g_sPrefixRefunded + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nRefundedAmnt );
+			_sendGaEventWithoutInteraction( 'checkout', 'refunded', _g_sPrefixRefunded + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nRefundedAmnt );
 		}
 		ga('ec:setAction', 'refund', {
 			'id': nOrderSrl    // Transaction ID is only required field for full refund.
