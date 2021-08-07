@@ -1,14 +1,14 @@
 /*!
- * GA event tracker JavaScript Library v0.0.8
+ * GA event tracker JavaScript Library v0.0.9
  * http://singleview.co.kr/
  *
  * Copyright 2015, 2015 singleview.co.kr
  * Released under the commercial license
  *
- * Date: 2015-29-02T15:27Z
+ * Date: 2015-09-30
  */
 
-var version = '0.0.8';
+var version = '0.0.9';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -354,9 +354,27 @@ var gatkCart =
 		this._g_oProductInfo.push({ cartid: nCartSrl, id: nItemSrl, name: sItemName, category: sCategory, brand: sBrand, variant: sVariant, price: nItemPrice, quantity: nTotalQuantity, coupon: sCoupon, position: nPosition  });
 		return true;
 	},
-	checkoutSelected : function( aCartSrl )
+	checkoutSelected : function( aTmpCartSrl )
 	{
 		// aCartSrl이 배열이 아니고 정수이면 배열로 전환하는 코드 필요
+		var aCartSrl = [];
+		if( aTmpCartSrl instanceof Array ) 
+		{
+//alert('value is Array!');
+			var nCartSrl;
+			for( nIdx in aTmpCartSrl ) 
+			{
+				if( aTmpCartSrl[nIdx] != '' )
+					aCartSrl.push( aTmpCartSrl[nIdx] );
+			}
+		}
+		else  // aCartSrl이 배열이 아니고 정수이면 배열로 전환
+		{
+//alert('Not an array');
+			var nTmpCartSrl = aTmpCartSrl;
+			aCartSrl.push( nTmpCartSrl );
+		}
+
 		var nStackedCartElement = this._g_oProductInfo.length;
 		var nSelectedCartElement = 0;
 		for( var i = 0; i < nStackedCartElement; i++ )
@@ -403,15 +421,33 @@ var gatkCart =
 		this._sendCheckoutAction();
 		_sendGaEventWithoutInteraction( 'checkout', 'started', _g_sPrefixCheckoutAll, nTotalPrice ); // Send data using an event after set ec-action
 	},
-	removeFromCart : function( aCartSrl ) //nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, nTotalPrice ) 
+	removeFromCart : function( aTmpCartSrl )
 	{
-		// aCartSrl이 배열이 아니고 정수이면 배열로 전환하는 코드 필요
+		var aCartSrl = [];
+		if( aTmpCartSrl instanceof Array ) 
+		{
+//alert('value is Array!');
+			var nCartSrl;
+			for( nIdx in aTmpCartSrl ) 
+			{
+				if( aTmpCartSrl[nIdx] != '' )
+					aCartSrl.push( aTmpCartSrl[nIdx] );
+			}
+		}
+		else  // aCartSrl이 배열이 아니고 정수이면 배열로 전환
+		{
+//alert('Not an array');
+			var nTmpCartSrl = aTmpCartSrl;
+			aCartSrl.push( nTmpCartSrl );
+		}
+
 		var nStackedCartElement = this._g_oProductInfo.length;
 		var nSelectedCartElement = 0;
 		var nTotalPrice = 0;
 		for( var i = 0; i < nStackedCartElement; i++ )
 		{
 			nSelectedCartElement = aCartSrl.length;
+
 			for( var j = 0; j < nSelectedCartElement; j++ )
 			{
 				if( aCartSrl[j] != '' && this._g_oProductInfo[i].cartid == aCartSrl[j] )
