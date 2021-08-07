@@ -5,10 +5,10 @@
  * Copyright 2015, 2015 singleview.co.kr
  * Released under the commercial license
  *
- * Date: 2015-05-02T15:27Z
+ * Date: 2015-12-02T15:27Z
  */
 
-var version = '0.0.2';
+var version = '0.0.3';
 var 
 	g_sPrefixViewDetail = 'vd',
 	g_sPrefixBuyImmediately = 'bi',
@@ -16,8 +16,27 @@ var
 	g_sPrefixRemoveFromCart = 'rfc',
 	g_sPrefixCheckoutSelected = 'cs',
 	g_sPrefixCheckoutAll = 'ca',
+	g_sPrefixSettlement = 'setl',
 	g_sPrefixPurchased = 'pur',
 	g_sPrefixRefunded = 'ref';
+
+var g_bEcRequired = false;
+
+var gatkHeader = 
+{
+	init : function( sTrackingId )
+	{
+		ga('create', sTrackingId, 'auto');
+		ga('require', 'linkid', 'http://www.google-analytics.com/plugins/ua/linkid.js');
+		ga('require', 'displayfeatures');
+		return true;
+	},
+	close : function()
+	{
+		ga('send', 'pageview');
+		return true;
+	}
+}
 
 var gatkList = 
 {
@@ -27,7 +46,11 @@ var gatkList =
 
 	init : function( sListTitle, nCurrentPage, nItemsPerPag )
 	{
-		ga('require', 'ec');
+		if( !g_bEcRequired )
+		{
+			g_bEcRequired = true;
+			ga('require', 'ec');
+		}
 		if( nCurrentPage === null || nCurrentPage === undefined || nCurrentPage.length == 0 )
 			nCurrentPage = 1;
 		if( nCurrentPage > 1 )
@@ -95,7 +118,11 @@ var gatkDetail =
 
 	init : function()
 	{
-		ga('require', 'ec');
+		if( !g_bEcRequired )
+		{
+			g_bEcRequired = true;
+			ga('require', 'ec');
+		}
 		return true;
 	},
 	loadItemInfo : function( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice )
@@ -145,7 +172,11 @@ var gatkCart =
 	_g_oProductInfo : [],
 	init : function()
 	{
-		ga('require', 'ec');
+		if( !g_bEcRequired )
+		{
+			g_bEcRequired = true;
+			ga('require', 'ec');
+		}
 		return true;
 	},
 	queueItemInfo : function( nCartSrl, nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, sCoupon, nPosition )
@@ -190,15 +221,15 @@ var gatkCart =
 		for( var i = 0; i < nElement; i++ )
 		{
 			ga('ec:addProduct', { // Provide product details in an productFieldObject.
-				'id': _g_oProductInfo[i].id, // Product ID (string).
-				'name': _g_oProductInfo[i].name, // Product name (string).
-				'category': _g_oProductInfo[i].category, // Product category (string).
-				'brand': _g_oProductInfo[i].brand, // Product brand (string).
-				'variant': _g_oProductInfo[i].variant, // Product variant (string).
-				'price': _g_oProductInfo[i].price, // Product price (currency).
-				'quantity': _g_oProductInfo[i].quantity // Product quantity (number).
+				'id': this._g_oProductInfo[i].id, // Product ID (string).
+				'name': this._g_oProductInfo[i].name, // Product name (string).
+				'category': this._g_oProductInfo[i].category, // Product category (string).
+				'brand': this._g_oProductInfo[i].brand, // Product brand (string).
+				'variant': this._g_oProductInfo[i].variant, // Product variant (string).
+				'price': this._g_oProductInfo[i].price, // Product price (currency).
+				'quantity': this._g_oProductInfo[i].quantity // Product quantity (number).
 			});
-			nTotalPrice += _g_oProductInfo[i].price * _g_oProductInfo[i].quantity;
+			nTotalPrice += this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity;
 		}
 		this._sendCheckoutAction();
 		_sendGaEventWithoutInteraction( 'checkout', 'started', g_sPrefixCheckoutAll, nTotalPrice ); // Send data using an event after set ec-action
@@ -242,7 +273,6 @@ var gatkCart =
 					break;
 				else
 				{
-//console.log('checkout with step');
 					ga('ec:setAction','checkout', {	'step': nStepNumber });
 					return;
 				}
@@ -252,7 +282,6 @@ var gatkCart =
 					break;
 				else
 				{
-//console.log('checkout with step and option');
 					ga('ec:setAction','checkout', {
 						'step': nStepNumber,   // A value of 1 indicates this action is first checkout step. step number is related with ecommerce->shopping analysis -> checkout behavior
 						'option': sOption   // Used to specify additional info about a checkout stage, e.g. payment method.
@@ -262,18 +291,89 @@ var gatkCart =
 			default:
 				break;
 		}
-//console.log('simple checkout');	
 		ga('ec:setAction','checkout');
 	}
-
 }
+var gatkSettlement = 
+{
+	_g_oProductInfo : [],
+	init : function()
+	{
+		if( !g_bEcRequired )
+		{
+			g_bEcRequired = true;
+			ga('require', 'ec');
+		}
+		return true;
+	},
+	queueItemInfo : function( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity )
+	{
+		// object literal notation to create your structures
+		this._g_oProductInfo.push({ id: nItemSrl, name: sItemName, category: sCategory, brand: sBrand, variant: sVariant, price: nItemPrice, quantity: nTotalQuantity });
+		return true;
+	},
+	patch : function()
+	{
+		//_sendGaEventWithoutInteraction( 'checkout', 'started', 'checkout_all', nTotalPrice );
+		var nElement = this._g_oProductInfo.length;
+		var nTotalPrice = 0;
+		for( var i = 0; i < nElement; i++ )
+		{
+			ga('ec:addProduct', { // Provide product details in an productFieldObject.
+				'id': this._g_oProductInfo[i].id, // Product ID (string).
+				'name': this._g_oProductInfo[i].name, // Product name (string).
+				'category': this._g_oProductInfo[i].category, // Product category (string).
+				'brand': this._g_oProductInfo[i].brand, // Product brand (string).
+				'variant': this._g_oProductInfo[i].variant, // Product variant (string).
+				'price': this._g_oProductInfo[i].price, // Product price (currency).
+				'quantity': this._g_oProductInfo[i].quantity // Product quantity (number).
+			});
+			nTotalPrice += this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity;
+		}
+		this._sendCheckoutAction();
+		_sendGaEventWithoutInteraction( 'checkout', 'started', g_sPrefixSettlement, nTotalPrice ); // Send data using an event after set ec-action
+	},
 
+	_sendCheckoutAction : function( nStepNumber, sOption )
+	{
+		switch( arguments.length )
+		{
+			case 1:
+				if( arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0 )
+					break;
+				else
+				{
+					ga('ec:setAction','checkout', {	'step': nStepNumber });
+					return;
+				}
+			case 2:
+				if( arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0 ||
+					arguments[1] === null || arguments[1] === undefined || arguments[1].length == 0 )
+					break;
+				else
+				{
+					ga('ec:setAction','checkout', {
+						'step': nStepNumber,   // A value of 1 indicates this action is first checkout step. step number is related with ecommerce->shopping analysis -> checkout behavior
+						'option': sOption   // Used to specify additional info about a checkout stage, e.g. payment method.
+					});
+					return;
+				}
+			default:
+				break;
+		}
+		ga('ec:setAction','checkout');
+	}
+}
 var gatkPurchase = 
 {
 	_g_oProductInfo : [],
 	init : function()
 	{
-		ga('require', 'ec');
+		if( !g_bEcRequired )
+		{
+			g_bEcRequired = true;
+			ga('require', 'ec');
+		}
 		return true;
 	},
 	queueItemInfo : function( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, sCoupon )
@@ -318,7 +418,11 @@ var gatkMypage =
 	_g_oProductInfo : [],
 	init : function()
 	{
-		ga('require', 'ec');
+		if( !g_bEcRequired )
+		{
+			g_bEcRequired = true;
+			ga('require', 'ec');
+		}
 		return true;
 	},
 	queueItemInfo : function( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity )
@@ -407,7 +511,6 @@ function sendLinkToItemDetailClickedEvent( nItemSrl, sItemName, sCategory, sBran
 		'position': _g_aItemPosition[ nItemSrl ]
 	});
 	ga('ec:setAction', 'click', { list: _g_sListTitle } );
-	//_sendGaEventWithoutInteraction( 'link', 'clicked', 'view_detail_'+sItemName, '' );
 }
 
 function sendItemDetailViewdEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVariant ) 
@@ -441,7 +544,6 @@ function sendAddtocartEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVari
 		'quantity': nTotalQuantity
     });
     ga('ec:setAction', 'add');
-	//_sendGaEventWithoutInteraction( 'button', 'clicked', 'add_to_cart_'+sItemName, nTotalPrice );
 }
 function sendRemoveFromcartEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, nTotalPrice ) 
 {
@@ -456,7 +558,6 @@ function sendRemoveFromcartEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, 
 		'quantity': nTotalQuantity
     });
     ga('ec:setAction', 'remove');
-	//_sendGaEventWithoutInteraction( 'button', 'clicked', 'remove_from_cart_'+sItemName, nTotalPrice );
 }
 
 function stackItemInfoGatk( nCartSrl, nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, sCoupon, nPosition )
@@ -491,7 +592,6 @@ function sendCheckoutSelectedEventGatkEc( aCartSrl )
 			}
 		}
 	}
-	//_sendGaEventWithoutInteraction( 'checkout', 'started', 'checkout_multi', nTotalPrice );
 }
 
 function sendCheckoutAllEventGatkEc()
@@ -514,9 +614,6 @@ function sendCheckoutAllEventGatkEc()
 
 		nTotalPrice += _g_oProductInfo[i].price * _g_oProductInfo[i].quantity;
 	}
-
-console.log( nTotalPrice );
-	//_sendGaEventWithoutInteraction( 'checkout', 'started', 'checkout_multiple', nTotalPrice );
 }
 
 // will change method name to sendCheckoutSingleEventGatkEc
