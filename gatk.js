@@ -1,14 +1,14 @@
 /*!
- * GA event tracker JavaScript Library v0.0.9
+ * GA event tracker JavaScript Library v0.1.1
  * http://singleview.co.kr/
  *
  * Copyright 2015, 2015 singleview.co.kr
  * Released under the commercial license
  *
- * Date: 2015-09-30
+ * Date: 2015-10-15
  */
 
-var version = '0.0.9';
+var version = '0.1.1';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -61,6 +61,20 @@ function checkCookie()
 	}
 }
 /************* temporary methods end *************/
+
+function setUtmParamsGatk( sSource, sMedium, sCampaign, sKeyword, sContentVariation ) 
+{
+	if( sSource != '' )
+		ga('set', 'campaignSource', sSource );
+	if( sMedium != '' )
+		ga('set', 'campaignMedium', sMedium );
+	if( sCampaign != '' )
+		ga('set', 'campaignName', sCampaign );
+	if( sKeyword != '' )
+		ga('set', 'campaignKeyword', sKeyword );
+	if( sContentVariation != '' )
+		ga('set', 'campaignContent', sContentVariation );	
+}
 
 function checkNonEcConversionGatk( sVirtualUrl, sPageTitle ) 
 {
@@ -213,7 +227,7 @@ var gatkList =
 	_g_sListTitle : 'undefined',
 	_g_oProductInfo : [],
 
-	init : function( sListTitle, nCurrentPage, nItemsPerPag )
+	init : function( sListTitle, nCurrentPage, nItemsPerPage )
 	{
 		if( !_g_bEcRequired )
 		{
@@ -222,7 +236,7 @@ var gatkList =
 		}
 		if( nCurrentPage === null || nCurrentPage === undefined || nCurrentPage.length == 0 )
 			nCurrentPage = 1;
-		if( nCurrentPage > 1 )
+		if( nCurrentPage > 1 ) // 한페이지에 복수 리스트 모듈이 있는 경우는 메인페이지 혹은 첫페이지로 한정함
 			this._g_nListPosition = nItemsPerPage * ( nCurrentPage - 1 ) + 1;
 		if( sListTitle !== null && sListTitle !== undefined && sListTitle.length > 0 )
 			this._g_sListTitle = sListTitle;
