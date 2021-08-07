@@ -1,14 +1,14 @@
 /*!
- * GA event tracker JavaScript Library v0.0.2
+ * GA event tracker JavaScript Library v0.0.7
  * http://singleview.co.kr/
  *
  * Copyright 2015, 2015 singleview.co.kr
  * Released under the commercial license
  *
- * Date: 2015-12-02T15:27Z
+ * Date: 2015-25-02T15:27Z
  */
 
-var version = '0.0.3';
+var version = '0.0.7';
 var 
 	g_sPrefixViewDetail = 'vd',
 	g_sPrefixBuyImmediately = 'bi',
@@ -21,6 +21,151 @@ var
 	g_sPrefixRefunded = 'ref';
 
 var g_bEcRequired = false;
+var _g_aImageElement = new Array();
+
+function setCookie( cname, cvalue, exdays )
+{
+	var d = new Date();
+	d.setTime( d.getTime() + ( exdays*24*60*60*1000 ) );
+	var expires = 'expires=' + d.toUTCString();
+	document.cookie = cname + '=' + cvalue + '; ' + expires;
+}
+
+function getCookie( cname )
+{
+	var name = cname + '=';
+	var ca = document.cookie.split( ';' );
+	for( var i=0; i<ca.length; i++ ) 
+	{
+		var c = ca[i];
+		while( c.charAt(0)==' ' ) 
+			c = c.substring(1);
+		if( c.indexOf(name) == 0 )
+			return c.substring(name.length, c.length);
+	}
+	return '';
+}
+
+function checkCookie() 
+{
+	var user = getCookie( 'username' );
+	if( user != '' ) 
+		alert( 'Welcome again ' + user );
+	else 
+	{
+		user = prompt( 'Please enter your name:', '');
+		if( user != '' && user != null ) 
+			setCookie( 'username', user, 365 );
+	}
+}
+
+function checkVisibilityGatk( elm, eval ) 
+{
+	eval = eval || 'visible';
+	var vpH = $(window).height(); // Viewport Height
+	var st = $(window).scrollTop(); // Scroll Top
+	var y = $(elm).offset().top;
+	var elementHeight = $(elm).height();
+	var sCurObjId = $(elm).attr('id');
+
+	if( eval == 'visible' )
+	{
+		// mark an object is on viewport
+		if( (y < (vpH + st)) && (y > (st - elementHeight)) )
+		{
+			var bChecked = false;
+			
+			if( _g_aImageElement.length > 0 )
+			{
+				for( var i in _g_aImageElement )
+				{
+					if( _g_aImageElement[i] == sCurObjId )
+					{
+						bChecked = true;
+						break;
+					}
+				}
+			}
+			
+			if( !bChecked )
+			{
+//console.log(sCurObjId );
+				_sendGaEventWithoutInteraction( 'banner', 'viewed', sCurObjId );
+				_g_aImageElement[_g_aImageElement.length] = sCurObjId;
+			}
+		}
+	}
+	if( eval == 'above' ) 
+		return ((y < (vpH + st)));
+}
+
+function sendClickEventGatk( sCategory, sPageTitle, sLocation, sWindow )
+{
+	if( sWindow === null || sWindow === undefined || sWindow.length == 0 )
+		sWindow = 'self';
+	_sendGaEventWithInteraction( sCategory, 'clicked', sPageTitle );
+	
+	if( sWindow == 'self' )
+	{
+		if( sLocation != '#' )
+			location.href = sLocation;
+	}
+	else
+	{
+		if( sLocation != '#' )
+		{
+			window.open( sLocation, sWindow );
+			window.focus();
+		}
+	}
+}
+
+// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
+// Send data using an event just after set ec-action
+function _sendGaEventWithInteraction( sEventCategory, sEventAction, sEventLabel, nEventValue )
+{
+	if( nEventValue === undefined )
+	{
+		ga('send', 'event',  {
+			'eventCategory': sEventCategory,   // Required.
+			'eventAction': sEventAction,      // Required.
+			'eventLabel': sEventLabel
+			});
+	}
+	else
+	{
+		ga('send', 'event',  {
+			'eventCategory': sEventCategory,   // Required.
+			'eventAction': sEventAction,      // Required.
+			'eventLabel': sEventLabel,
+			'eventValue': nEventValue
+			});
+	}
+}
+// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
+// Send data using an event just after set ec-action
+function _sendGaEventWithoutInteraction( sEventCategory, sEventAction, sEventLabel, nEventValue )
+{
+	if( nEventValue === undefined )
+	{
+		ga('send', 'event', {
+			'eventCategory': sEventCategory,   // Required.
+			'eventAction': sEventAction,      // Required.
+			'eventLabel': sEventLabel,
+			'nonInteraction': 1
+			});	
+	}
+	else
+	{
+		ga('send', 'event', {
+			'eventCategory': sEventCategory,   // Required.
+			'eventAction': sEventAction,      // Required.
+			'eventLabel': sEventLabel,
+			'eventValue': nEventValue,
+			'nonInteraction': 1
+			});
+	}
+}
 
 var gatkHeader = 
 {
@@ -34,7 +179,16 @@ var gatkHeader =
 	close : function()
 	{
 		ga('send', 'pageview');
+		this._runSingleviewTracker();
 		return true;
+	},
+	_runSingleviewTracker : function()
+	{
+		var sEncodedUserAgent = encodeURI( navigator.userAgent );
+		var sCurrentUrl = window.location.href.toString().split( window.location.host )[1];
+		var sEncodedCurrentUri = encodeURIComponent( sCurrentUrl );
+		var oImg = document.createElement( 'IMG' );
+		oImg.src = 'http://singleview.co.kr/singleview.gif?hn=' + window.location.host + '&qs=' +  sEncodedCurrentUri + '&ua=' + sEncodedUserAgent;
 	}
 }
 
@@ -216,7 +370,7 @@ var gatkCart =
 	checkoutAll : function()
 	{
 		//_sendGaEventWithoutInteraction( 'checkout', 'started', 'checkout_all', nTotalPrice );
-		var nElement = _g_oProductInfo.length;
+		var nElement = this._g_oProductInfo.length;
 		var nTotalPrice = 0;
 		for( var i = 0; i < nElement; i++ )
 		{
@@ -449,393 +603,5 @@ var gatkMypage =
 		ga('ec:setAction', 'refund', {
 			'id': nOrderSrl    // Transaction ID is only required field for full refund.
 		});
-	}
-}
-
-var _g_sDebugTargetHostNmae = 'lashev0an';
-var _g_sOperatingHostName = window.location.hostname;
-var _g_bDebug = false;
-var _g_aImageElement = new Array();
-var _g_aItemPosition = new Array();
-var _g_oProductInfo = [];
-var _g_nListPosition = 1;
-var _g_sListTitle = 'undefined';
-
-if( ~_g_sOperatingHostName.indexOf( _g_sDebugTargetHostNmae )  ) 
-{
-	_g_bDebug = true;
-}
-
-function loadEcommerceGatkEc()
-{
-	ga('require', 'ec');
-}
-
-function setItemListViewEnv( sListTitle, nCurrentPage, nItemsPerPage )
-{
-	if( nCurrentPage === null || nCurrentPage === undefined || nCurrentPage.length == 0 )
-		nCurrentPage = 1;
-
-	if( nCurrentPage > 1 )
-		_g_nListPosition = nItemsPerPage * ( nCurrentPage - 1 ) + 1;
-
-	if( sListTitle !== null && sListTitle !== undefined && sListTitle.length > 0 )
-		_g_sListTitle = sListTitle;
-}
-
-function sendItemListViewdEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVariant )
-{
-	_g_aItemPosition[ nItemSrl ] = _g_nListPosition;
-	ga('ec:addImpression', {
-		'id': nItemSrl, // Product details are provided in an impressionFieldObject.
-		'name': sItemName,
-		'category': sCategory,
-		'brand': sBrand,
-		'variant': sVariant,
-		'list': _g_sListTitle,
-		'position': _g_nListPosition++ // 'position' indicates the product position in the list.
-	});
-}
-
-// Called when a link to a product is clicked.
-function sendLinkToItemDetailClickedEvent( nItemSrl, sItemName, sCategory, sBrand, sVariant ) 
-{
-	_sendGaEventWithoutInteraction( 'link', 'clicked', 'view_detail_'+sItemName, '' );
-
-	ga('ec:addProduct', {
-		'id': nItemSrl,
-		'name': sItemName,
-		'category': sCategory,
-		'brand': sBrand,
-		'variant': sVariant,
-		'position': _g_aItemPosition[ nItemSrl ]
-	});
-	ga('ec:setAction', 'click', { list: _g_sListTitle } );
-}
-
-function sendItemDetailViewdEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVariant ) 
-{
-	ga('ec:addProduct', {               // Provide product details in an productFieldObject.
-		'id': nItemSrl,                   // Product ID (string).
-		'name': sItemName, // Product name (string).
-		'category': sCategory,            // Product category (string).
-		'brand': sBrand,                // Product brand (string).
-		'variant': sVariant,               // Product variant (string).
-		'position': 1,                    // Product position (number).
-	});
-	ga('ec:setAction', 'detail');      // Detail action.
-}
-
-function sendBuyimmediateEventGatkEc( sItemName, nTotalPrice ) 
-{
-	_sendGaEventWithoutInteraction( 'button', 'clicked', 'buy_immediate_'+sItemName, nTotalPrice );
-}
-
-function sendAddtocartEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, nTotalPrice ) 
-{
-	_sendGaEventWithoutInteraction( 'button', 'clicked', 'add_to_cart_'+sItemName, nTotalPrice );
-	ga('ec:addProduct', {
-		'id': nItemSrl,
-		'name': sItemName,
-		'category': sCategory,
-		'brand': sBrand,
-		'variant': sVariant,
-		'price': nItemPrice,
-		'quantity': nTotalQuantity
-    });
-    ga('ec:setAction', 'add');
-}
-function sendRemoveFromcartEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, nTotalPrice ) 
-{
-	_sendGaEventWithoutInteraction( 'button', 'clicked', 'remove_from_cart_'+sItemName, nTotalPrice );
-	ga('ec:addProduct', {
-		'id': nItemSrl,
-		'name': sItemName,
-		'category': sCategory,
-		'brand': sBrand,
-		'variant': sVariant,
-		'price': nItemPrice,
-		'quantity': nTotalQuantity
-    });
-    ga('ec:setAction', 'remove');
-}
-
-function stackItemInfoGatk( nCartSrl, nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, sCoupon, nPosition )
-{
-	// object literal notation to create your structures
-	_g_oProductInfo.push({ cartid: nCartSrl, id: nItemSrl, name: sItemName, category: sCategory, brand: sBrand, variant: sVariant, price: nItemPrice, quantity: nTotalQuantity, coupon: sCoupon, position: nPosition  });
-}
-
-function sendCheckoutSelectedEventGatkEc( aCartSrl )
-{
-	var nStackedCartElement = _g_oProductInfo.length;
-	var nSelectedCartElement = 0;
-	var nTotalPrice = 0;
-	for( var i = 0; i < nStackedCartElement; i++ )
-	{
-		nSelectedCartElement = aCartSrl.length;
-		for( var j = 0; j < nSelectedCartElement; j++ )
-		{
-			if( aCartSrl[j] != '' && _g_oProductInfo[i].cartid == aCartSrl[j] )
-			{
-				ga('ec:addProduct', { // Provide product details in an productFieldObject.
-					'id': _g_oProductInfo[i].id, // Product ID (string).
-					'name': _g_oProductInfo[i].name, // Product name (string).
-					'category': _g_oProductInfo[i].category, // Product category (string).
-					'brand': _g_oProductInfo[i].brand, // Product brand (string).
-					'variant': _g_oProductInfo[i].variant, // Product variant (string).
-					'price': _g_oProductInfo[i].price, // Product price (currency).
-					'quantity': _g_oProductInfo[i].quantity // Product quantity (number).
-				});
-				nTotalPrice += _g_oProductInfo[i].price * _g_oProductInfo[i].quantity;
-				aCartSrl.shift();
-			}
-		}
-	}
-}
-
-function sendCheckoutAllEventGatkEc()
-{
-	_sendGaEventWithoutInteraction( 'checkout', 'started', 'checkout_multiple', nTotalPrice );
-
-	var nElement = _g_oProductInfo.length;
-	var nTotalPrice = 0;
-	for( var i = 0; i < nElement; i++ )
-	{
-		ga('ec:addProduct', { // Provide product details in an productFieldObject.
-			'id': _g_oProductInfo[i].id, // Product ID (string).
-			'name': _g_oProductInfo[i].name, // Product name (string).
-			'category': _g_oProductInfo[i].category, // Product category (string).
-			'brand': _g_oProductInfo[i].brand, // Product brand (string).
-			'variant': _g_oProductInfo[i].variant, // Product variant (string).
-			'price': _g_oProductInfo[i].price, // Product price (currency).
-			'quantity': _g_oProductInfo[i].quantity // Product quantity (number).
-		});
-
-		nTotalPrice += _g_oProductInfo[i].price * _g_oProductInfo[i].quantity;
-	}
-}
-
-// will change method name to sendCheckoutSingleEventGatkEc
-function sendCheckoutEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity )
-{
-	_sendGaEventWithoutInteraction( 'checkout', 'started', 'checkout_'+sItemName, nTotalPrice );
-	ga('ec:addProduct', { // Provide product details in an productFieldObject.
-		'id': nItemSrl, // Product ID (string).
-		'name': sItemName, // Product name (string).
-		'category': sCategory, // Product category (string).
-		'brand': sBrand, // Product brand (string).
-		'variant': sVariant, // Product variant (string).
-		'price': nItemPrice, // Product price (currency).
-		'quantity': nTotalQuantity // Product quantity (number).
-	});
-	var nTotalPrice = nItemPrice * nTotalQuantity;
-	// send pageview 전에 send event 명령 수행하면 EC 정보가 날아가버림
-	//_sendGaEventWithoutInteraction( 'checkout', 'started', 'checkout_'+sItemName, nTotalPrice );
-}
-
-function sendCheckoutActionGatkEc( nStepNumber, sOption )
-{
-	switch( arguments.length )
-	{
-		case 1:
-			if( arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0 )
-				break;
-			else
-			{
-//console.log('checkout with step');
-				ga('ec:setAction','checkout', {	'step': nStepNumber });
-				return;
-			}
-		case 2:
-			if( arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0 ||
-				arguments[1] === null || arguments[1] === undefined || arguments[1].length == 0 )
-				break;
-			else
-			{
-//console.log('checkout with step and option');
-				ga('ec:setAction','checkout', {
-					'step': nStepNumber,   // A value of 1 indicates this action is first checkout step. step number is related with ecommerce->shopping analysis -> checkout behavior
-					'option': sOption   // Used to specify additional info about a checkout stage, e.g. payment method.
-				});
-				return;
-			}
-		default:
-			break;
-	}
-//console.log('simple checkout');	
-	ga('ec:setAction','checkout');
-}
-
-function sendPurchaseEventGatkEc( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, sCoupon, nTotalQuantity )
-{
-	_sendGaEventWithoutInteraction( 'checkout', 'purchased', 'purchase_'+sItemName, nTotalPrice );
-	ga('ec:addProduct', { // Provide product details in an productFieldObject.
-		'id': nItemSrl, // Product ID (string).
-		'name': sItemName, // Product name (string).
-		'category': sCategory, // Product category (string).
-		'brand': sBrand, // Product brand (string).
-		'variant': sVariant, // Product variant (string).
-		'price': nItemPrice, // Product price (currency).
-		'coupon': sCoupon,  // Product coupon (string).
-		'quantity': nTotalQuantity // Product quantity (number).
-	});
-	var nTotalPrice = nItemPrice * nTotalQuantity;
-	//_sendGaEventWithoutInteraction( 'checkout', 'purchased', 'purchase_'+sItemName, nTotalPrice );
-}
-
-function sendPurchaseActionGatkEc( nOrderSrl, sAffiliation, nRevenue, nShippingCost, sCoupon )
-{
-	var nTaxAmnt = nRevenue * 0.1;
-
-	ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
-		'id': nOrderSrl,             // (Required) Transaction id (string).
-		'affiliation': sAffiliation, // Affiliation (string).
-		'revenue': nRevenue,         // Revenue (currency).
-		'tax': nTaxAmnt,             // Tax (currency).
-		'shipping': nShippingCost,   // Shipping (currency).
-		'coupon': sCoupon            // Transaction coupon (string).
-	});
-}
-
-// Refund an entire transaction.
-function sendRefundEntireActionGatkEc( nOrderSrl, nRefundedAmnt )
-{
-	_sendGaEventWithoutInteraction( 'checkout', 'refunded', 'refunded_'+nOrderSrl, nRefundedAmnt );
-	ga('ec:setAction', 'refund', {
-		'id': nOrderSrl    // Transaction ID is only required field for full refund.
-	});
-	//_sendGaEventWithoutInteraction( 'checkout', 'refunded', 'refunded_'+nOrderSrl, nRefundedAmnt );
-}
-
-function checkVisibilityGatk( elm, eval ) 
-{
-	eval = eval || 'visible';
-	var vpH = $(window).height(); // Viewport Height
-	var st = $(window).scrollTop(); // Scroll Top
-	var y = $(elm).offset().top;
-	var elementHeight = $(elm).height();
-	var sCurObjId = $(elm).attr('id');
-
-	if( eval == 'visible' )
-	{
-		// mark an object is on viewport
-		if( (y < (vpH + st)) && (y > (st - elementHeight)) )
-		{
-			var bChecked = false;
-			
-			if( _g_aImageElement.length > 0 )
-			{
-				for( var i in _g_aImageElement )
-				{
-					if( _g_aImageElement[i] == sCurObjId )
-					{
-						bChecked = true;
-						break;
-					}
-				}
-			}
-			
-			if( !bChecked )
-			{
-//console.log(sCurObjId );
-				_sendGaEventWithoutInteraction( 'banner', 'viewed', sCurObjId );
-				_g_aImageElement[_g_aImageElement.length] = sCurObjId;
-			}
-		}
-	}
-	if( eval == 'above' ) 
-		return ((y < (vpH + st)));
-}
-
-function sendClickEventGatk( sAction, sPageTitle, sLocation, sWindow )
-{
-	if( sWindow === null || sWindow === undefined || sWindow.length == 0 )
-		sWindow = 'self';
-	_sendGaEventWithInteraction( sAction, 'clicked', sPageTitle );
-	
-	if( sWindow == 'self' )
-	{
-		if( sLocation != '#' )
-			location.href = sLocation;
-	}
-	else
-	{
-		if( sLocation != '#' )
-		{
-			window.open( sLocation, sWindow );
-			window.focus();
-		}
-	}
-}
-
-// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
-// Send data using an event just after set ec-action
-function _sendGaEventWithInteraction( sEventCategory, sEventAction, sEventLabel, nEventValue )
-{
-	if( !_g_bDebug )
-	{
-		if( nEventValue === undefined )
-		{
-			ga('send', 'event',  {
-				'eventCategory': sEventCategory,   // Required.
-				'eventAction': sEventAction,      // Required.
-				'eventLabel': sEventLabel
-				});
-		}
-		else
-		{
-			ga('send', 'event',  {
-				'eventCategory': sEventCategory,   // Required.
-				'eventAction': sEventAction,      // Required.
-				'eventLabel': sEventLabel,
-				'eventValue': nEventValue
-				});
-		}
-	}
-	//ga('send', 'event', 'button', 'clicked', 'add_to_cart', nTotalPrice, { 'hitCallback': function() { console.log('addCart_clicked'); }});
-	if( _g_bDebug )
-	{
-		if( nEventValue === undefined )
-			console.log( sEventCategory, sEventAction, sEventLabel );
-		else
-			console.log( sEventCategory, sEventAction, sEventLabel, nEventValue );
-		
-	}
-}
-// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
-// Send data using an event just after set ec-action
-function _sendGaEventWithoutInteraction( sEventCategory, sEventAction, sEventLabel, nEventValue )
-{
-	if( !_g_bDebug )
-	{
-		if( nEventValue === undefined )
-		{
-			ga('send', 'event', {
-				'eventCategory': sEventCategory,   // Required.
-				'eventAction': sEventAction,      // Required.
-				'eventLabel': sEventLabel,
-				'nonInteraction': 1
-				});	
-		}
-		else
-		{
-			ga('send', 'event', {
-				'eventCategory': sEventCategory,   // Required.
-				'eventAction': sEventAction,      // Required.
-				'eventLabel': sEventLabel,
-				'eventValue': nEventValue,
-				'nonInteraction': 1
-				});
-		}
-	}
-	
-	if( _g_bDebug )
-	{
-		if( nEventValue === undefined )
-			console.log( sEventCategory, sEventAction, sEventLabel );
-		else
-			console.log( sEventCategory, sEventAction, sEventLabel, nEventValue );
-		
 	}
 }
