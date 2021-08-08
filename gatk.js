@@ -6,8 +6,8 @@
  * Released under the commercial license
  */
 
-var version = '0.1.7';
-var version_date = '2015-12-05';
+var version = '0.1.8';
+var version_date = '2015-12-08';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -72,7 +72,7 @@ function setUtmParamsGatk( sSource, sMedium, sCampaign, sKeyword, sContentVariat
 	if( sKeyword != '' )
 		ga('set', 'campaignKeyword', sKeyword );
 	if( sContentVariation != '' )
-		ga('set', 'campaignContent', sContentVariation );	
+		ga('set', 'campaignContent', sContentVariation );
 }
 
 function checkNonEcConversionGatk( sVirtualUrl, sPageTitle ) 
@@ -645,6 +645,7 @@ var gatkPurchase =
 				});
 				_sendGaEventWithoutInteraction( 'checkout', 'purchased', _g_sPrefixPurchased + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
 			}
+
 		}
 		else // gatkPurchase.queueItemInfo()가 실행되지 않았으면 ecommerce->overview->product 정보가 나오지 않음
 		{
@@ -658,7 +659,16 @@ var gatkPurchase =
 				'coupon': sCoupon            // Transaction coupon (string).
 			});
 		}
-	}		
+		this._runSingleviewConversion( 'purchase', nRevenue );
+	},
+	_runSingleviewConversion : function( sActionType, nRevenue )
+	{
+		var sEncodedUserAgent = encodeURI( navigator.userAgent );
+		var sCurrentUrl = window.location.href.toString().split( window.location.host )[1];
+		var sEncodedCurrentUri = encodeURIComponent( sCurrentUrl );
+		var oImg = document.createElement( 'IMG' );
+		oImg.src = 'http://singleview.co.kr/conversion.gif?hn=' + window.location.host + '&at=' + sActionType  + '&rv=' + nRevenue + '&qs=' +  sEncodedCurrentUri + '&ua=' + sEncodedUserAgent;
+	}
 }
 
 var gatkMypage = 
