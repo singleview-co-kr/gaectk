@@ -6,8 +6,8 @@
  * Released under the commercial license
  */
 
-var version = '0.1.6';
-var version_date = '2015-12-04';
+var version = '0.1.7';
+var version_date = '2015-12-05';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -618,8 +618,8 @@ var gatkPurchase =
 	{
 		var nElement = this._g_oProductInfo.length;
 		var nTaxAmnt = nRevenue * 0.1;
-		
-		if( nElement == 0 )
+
+		if( nElement > 0 ) // gatkPurchase.queueItemInfo()가 실행되었으면
 		{
 			for( var i = 0; i < nElement; i++ )
 			{
@@ -646,7 +646,7 @@ var gatkPurchase =
 				_sendGaEventWithoutInteraction( 'checkout', 'purchased', _g_sPrefixPurchased + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
 			}
 		}
-		else
+		else // gatkPurchase.queueItemInfo()가 실행되지 않았으면 ecommerce->overview->product 정보가 나오지 않음
 		{
 			// purchase action should be sent for every single item
 			ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
