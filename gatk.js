@@ -43,8 +43,8 @@ d[k>>>24]^e[n>>>16&255]^j[g>>>8&255]^l[h&255]^c[p++],n=d[n>>>24]^e[g>>>16&255]^j
  * Released under the commercial license
  */
 
-var version = '0.2.8';
-var version_date = '2017-02-25';
+var _g_sGtakVersion = '0.3.0';
+var _g_sGatkVersionDate = '2017-04-23';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -118,13 +118,20 @@ function checkVisibilityGatk( elm, eval )
 			
 			if( !bChecked )
 			{
-				_sendGaEventWithoutInteraction( 'banner', 'viewed', sCurObjId );
+				_sendGaEventWithoutInteraction( 'banner', 'displayed', sCurObjId );
 				_g_aImageElement[_g_aImageElement.length] = sCurObjId;
 			}
 		}
 	}
 	if( eval == 'above' ) 
 		return ((y < (vpH + st)));
+}
+
+function sendDisplayEventGatk( sDisplayedObject )
+{
+	if( sDisplayedObject === null || sDisplayedObject === undefined || sDisplayedObject.length == 0 )
+		return;
+	_sendGaEventWithoutInteraction( 'banner', 'displayed', sDisplayedObject );
 }
 
 function sendClickEventGatk( sCategory, sPageTitle, sLocation, sWindow )
@@ -394,19 +401,21 @@ function _reflect()
 {
 	// http://stackoverflow.com/questions/2255689/how-to-get-the-file-path-of-the-currently-executing-javascript-code
 	var aSrc = _g_sSrc.split('/');
+	//console.log( _SHA256('svapi.co.kr:5018'));
 	for (var i in aSrc)
 	{
 		// http://rubular.com/r/KByADagF3Z
-		if (/^[sS][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(aSrc[i]))
+		if (/[sS][vV][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+:[0-9]+/.test(aSrc[i])) // match 'svapi.co.kr:5018'
 		{
-			if( _SHA256(aSrc[i]) == 'ce79286b7fc9cf82f942b036124fb8cd5dd8e3df6083271118d7cd758b452c8a' ) // singleview.co.kr
+			//if( _SHA256(aSrc[i]) == 'ce79286b7fc9cf82f942b036124fb8cd5dd8e3df6083271118d7cd758b452c8a' ) // singleview.co.kr
+			if( _SHA256(aSrc[i]) == '65d88890ec2b561bf40a8f13b1e469f5e75b3cf68aa63d0e01a7605ff7ffe20f' ) // svapi.co.kr:5018
 			{
 //console.log('valid server');
 				return true;
 			}
 		}
 	}
-//console.log('invalid server');
+console.log('invalid server');
 	return false;
 }
 
@@ -427,7 +436,7 @@ var gatkHeader =
 	},
 	getVersion : function()
 	{
-		console.log( 'gatk ver ' + version + ' on ' + version_date + ' by singleview.co.kr' );
+		console.log( 'gatk ver ' + _g_sGtakVersion + ' on ' + _g_sGatkVersionDate + ' by singleview.co.kr' );
 	},
 	_runCollector : function()
 	{
