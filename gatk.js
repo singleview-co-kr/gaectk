@@ -6,8 +6,8 @@
  * Released under the commercial license
  */
 
-var version = '0.1.4';
-var version_date = '2015-11-22';
+var version = '0.1.5';
+var version_date = '2015-11-29';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -486,9 +486,9 @@ var gatkCart =
 				'price': this._g_oProductInfo[i].price, // Product price (currency).
 				'quantity': this._g_oProductInfo[i].quantity // Product quantity (number).
 			});
-			nTotalPrice += this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity;
+			nTotalPrice = this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity * -1;
 			ga('ec:setAction', 'remove');
-			_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nTotalPrice ); // Send data using an event after set ec-action
+			_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nItemPrice ); // Send data using an event after set ec-action
 		}
 	},
 	removeFromCart : function( aTmpCartSrl )
@@ -631,24 +631,17 @@ var gatkPurchase =
 				'coupon': sCoupon  // Product coupon (string).
 			});
 			
-			/*ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
+			// purchase action should be sent for every single item
+			ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
 				'id': nOrderSrl,             // (Required) Transaction id (string).
 				'affiliation': sAffiliation, // Affiliation (string).
 				'revenue': nRevenue,         // Revenue (currency).
 				'tax': nTaxAmnt,             // Tax (currency).
 				'shipping': nShippingCost,   // Shipping (currency).
 				'coupon': sCoupon            // Transaction coupon (string).
-			});*/
+			});
 			_sendGaEventWithoutInteraction( 'checkout', 'purchased', _g_sPrefixPurchased + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
 		}
-		ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
-			'id': nOrderSrl,             // (Required) Transaction id (string).
-			'affiliation': sAffiliation, // Affiliation (string).
-			'revenue': nRevenue,         // Revenue (currency).
-			'tax': nTaxAmnt,             // Tax (currency).
-			'shipping': nShippingCost,   // Shipping (currency).
-			'coupon': sCoupon            // Transaction coupon (string).
-		});
 	}
 }
 
