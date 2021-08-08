@@ -6,8 +6,8 @@
  * Released under the commercial license
  */
 
-var version = '0.2.1';
-var version_date = '2016-03-22';
+var version = '0.2.3';
+var version_date = '2016-07-22';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -22,23 +22,6 @@ var
 var _g_bEcRequired = false;
 var _g_bSentConversionPageView = false;
 var _g_aImageElement = new Array();
-
-/************* temporary methods begin *************/
-function setCookie( cname, cvalue, exdays )
-{
-	return;
-}
-
-function getCookie( cname )
-{
-	return;
-}
-
-function checkCookie() 
-{
-	return;
-}
-/************* temporary methods end *************/
 
 function setUtmParamsGatk( sSource, sMedium, sCampaign, sKeyword, sContentVariation ) 
 {
@@ -107,18 +90,18 @@ function checkVisibilityGatk( elm, eval )
 
 function sendClickEventGatk( sCategory, sPageTitle, sLocation, sWindow )
 {
+	if( sLocation === null || sLocation === undefined || sLocation.length == 0 || sLocation == '#' )
+		sLocation = '#';
+
 	if( sWindow === null || sWindow === undefined || sWindow.length == 0 )
 		sWindow = 'self';
 	_sendGaEventWithInteraction( sCategory, 'clicked', sPageTitle );
-	
-	if( sWindow == 'self' )
+
+	if( sLocation != '#' )
 	{
-		if( sLocation != '#' )
+		if( sWindow == 'self' )
 			location.href = sLocation;
-	}
-	else
-	{
-		if( sLocation != '#' )
+		else
 		{
 			window.open( sLocation, sWindow );
 			window.focus();
