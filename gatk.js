@@ -2,12 +2,12 @@
  * GA event tracker JavaScript Library
  * http://singleview.co.kr/
  *
- * Copyright 2015, 2015 singleview.co.kr
+ * Copyright 2015, 2016 singleview.co.kr
  * Released under the commercial license
  */
 
-var version = '0.1.8';
-var version_date = '2015-12-08';
+var version = '0.2.1';
+var version_date = '2016-03-22';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -26,38 +26,17 @@ var _g_aImageElement = new Array();
 /************* temporary methods begin *************/
 function setCookie( cname, cvalue, exdays )
 {
-	var d = new Date();
-	d.setTime( d.getTime() + ( exdays*24*60*60*1000 ) );
-	var expires = 'expires=' + d.toUTCString();
-	document.cookie = cname + '=' + cvalue + '; ' + expires;
+	return;
 }
 
 function getCookie( cname )
 {
-	var name = cname + '=';
-	var ca = document.cookie.split( ';' );
-	for( var i=0; i<ca.length; i++ ) 
-	{
-		var c = ca[i];
-		while( c.charAt(0)==' ' ) 
-			c = c.substring(1);
-		if( c.indexOf(name) == 0 )
-			return c.substring(name.length, c.length);
-	}
-	return '';
+	return;
 }
 
 function checkCookie() 
 {
-	var user = getCookie( 'username' );
-	if( user != '' ) 
-		alert( 'Welcome again ' + user );
-	else 
-	{
-		user = prompt( 'Please enter your name:', '');
-		if( user != '' && user != null ) 
-			setCookie( 'username', user, 365 );
-	}
+	return;
 }
 /************* temporary methods end *************/
 
@@ -161,6 +140,7 @@ function _sendGaEventWithInteraction( sEventCategory, sEventAction, sEventLabel,
 	}
 	else
 	{
+		nEventValue = _enforceInt( nEventValue );
 		ga('send', 'event',  {
 			'eventCategory': sEventCategory,   // Required.
 			'eventAction': sEventAction,      // Required.
@@ -184,6 +164,7 @@ function _sendGaEventWithoutInteraction( sEventCategory, sEventAction, sEventLab
 	}
 	else
 	{
+		nEventValue = _enforceInt( nEventValue );
 		ga('send', 'event', {
 			'eventCategory': sEventCategory,   // Required.
 			'eventAction': sEventAction,      // Required.
@@ -229,6 +210,16 @@ function _sendCheckoutAction( nStepNumber, sOption )
 	}
 	return;
 }
+
+function _enforceInt( nEventValue )
+{
+	nEventValue = nEventValue.toString().replace( /$|,/g,'' );
+	if( isNaN( nEventValue ) )
+		return 0;
+	else
+		return nEventValue;
+}
+
 var gatkHeader = 
 {
 	init : function( sTrackingId )
@@ -241,8 +232,12 @@ var gatkHeader =
 	close : function()
 	{
 		ga('send', 'pageview');
-		this._runSingleviewTracker();
-		return true;
+		//this._runSingleviewTracker();
+		//return true;
+	},
+	getVersion : function()
+	{
+		console.log( 'gatk ver ' + version + ' on ' + version_date + ' by singleview.co.kr' );
 	},
 	_runSingleviewTracker : function()
 	{
@@ -281,8 +276,14 @@ var gatkList =
 		this._increasePosition();
 		return true;
 	},
-	patchImpression : function()
+	patchImpression : function( nItemChunk )
 	{
+		if( typeof nItemChunk === 'undefined' )
+			nItemChunk = 30;
+
+		if( nItemChunk == 0 )
+			nItemChunk = 30;
+
 		var nStackedCartElement = this._g_oProductInfo.length;
 		for( var i = 0; i < nStackedCartElement; i++ )
 		{
@@ -295,6 +296,8 @@ var gatkList =
 				'list': this._g_sListTitle,
 				'position': this._g_oProductInfo[i].position // 'position' indicates the product position in the list.
 			});
+			if( i > 0 && i % nItemChunk == 0 )
+				_sendGaEventWithoutInteraction( 'eec', 'send', 'eec_addImp', 0 );
 		}
 		return true;
 	},
@@ -316,7 +319,7 @@ var gatkList =
 					'position': this._g_oProductInfo[i].position // 'position' indicates the product position in the list.
 				});
 				ga('ec:setAction', 'click', { list: this._g_sListTitle } );
-				_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixViewDetail + '_' + this._g_oProductInfo[i].id+'_'+this._g_oProductInfo[i].name );
+				_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixViewDetail + '_on_' + this._g_sListTitle +'_pos:' + this._g_oProductInfo[i].position + '_' + this._g_oProductInfo[i].id+'_'+this._g_oProductInfo[i].name );
 				break;
 			}
 		}
@@ -343,6 +346,7 @@ var gatkDetail =
 	},
 	loadItemInfo : function( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice )
 	{
+		nItemPrice = _enforceInt( nItemPrice );
 		this._g_oProductInfo.push({ id: nItemSrl, name: sItemName, category: sCategory, brand: sBrand, variant: sVariant, price: nItemPrice });
 		return true;
 	},
@@ -361,12 +365,14 @@ var gatkDetail =
 	},
 	patchBuyImmediately : function( nTotalQuantity )
 	{
+		nTotalQuantity = _enforceInt( nTotalQuantity );
 		var nTotalPrice = nTotalQuantity * this._g_oProductInfo[0].price;
 		_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixBuyImmediately + '_' + this._g_oProductInfo[0].id + '_' + this._g_oProductInfo[0].name, nTotalPrice );
 		return true;
 	},
 	patchAddToCart : function( nTotalQuantity )
 	{
+		nTotalQuantity = _enforceInt( nTotalQuantity );
 		var nTotalPrice = nTotalQuantity * this._g_oProductInfo[0].price;
 		_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixAddToCart + '_' + this._g_oProductInfo[0].id + '_' + this._g_oProductInfo[0].name, nTotalPrice );
 		ga('ec:addProduct', {
@@ -397,13 +403,14 @@ var gatkCart =
 	},
 	queueItemInfo : function( nCartSrl, nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, sCoupon )
 	{
+		nItemPrice = _enforceInt( nItemPrice );
 		// object literal notation to create your structures
 		this._g_oProductInfo.push({ cartid: nCartSrl, id: nItemSrl, name: sItemName, category: sCategory, brand: sBrand, variant: sVariant, price: nItemPrice, quantity: nTotalQuantity, coupon: sCoupon });
 		return true;
 	},
 	checkoutSelected : function( aTmpCartSrl )
 	{
-		// aCartSrl이 배열이 아니고 정수이면 배열로 전환하는 코드 필요
+		// aCartSrl이 배열이 아니고 정수이면 배열로 전환
 		var aCartSrl = [];
 		if( aTmpCartSrl instanceof Array ) 
 		{
@@ -488,7 +495,7 @@ var gatkCart =
 			});
 			nTotalPrice = this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity * -1;
 			ga('ec:setAction', 'remove');
-			_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nItemPrice ); // Send data using an event after set ec-action
+			_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nTotalPrice ); // Send data using an event after set ec-action
 		}
 	},
 	removeFromCart : function( aTmpCartSrl )
@@ -552,6 +559,7 @@ var gatkSettlement =
 	},
 	queueItemInfo : function( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity )
 	{
+		nItemPrice = _enforceInt( nItemPrice );
 		// object literal notation to create your structures
 		this._g_oProductInfo.push({ id: nItemSrl, name: sItemName, category: sCategory, brand: sBrand, variant: sVariant, price: nItemPrice, quantity: nTotalQuantity });
 		return true;
@@ -609,6 +617,7 @@ var gatkPurchase =
 	},
 	queueItemInfo : function( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, sCoupon )
 	{
+		nItemPrice = _enforceInt( nItemPrice );
 		// can be ignored if engine does not provide purchased item list in checkout result page
 		// object literal notation to create your structures
 		this._g_oProductInfo.push({ id: nItemSrl, name: sItemName, category: sCategory, brand: sBrand, variant: sVariant, price: nItemPrice, quantity: nTotalQuantity, coupon: sCoupon  });
@@ -616,6 +625,8 @@ var gatkPurchase =
 	},
 	patchPurchase : function( nOrderSrl, sAffiliation, nRevenue, nShippingCost, sCoupon )
 	{
+		nRevenue = _enforceInt( nRevenue );
+		nShippingCost = _enforceInt( nShippingCost );
 		var nElement = this._g_oProductInfo.length;
 		var nTaxAmnt = nRevenue * 0.1;
 
@@ -685,6 +696,7 @@ var gatkMypage =
 	},
 	queueItemInfo : function( nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity )
 	{
+		nItemPrice = _enforceInt( nItemPrice );
 		// object literal notation to create your structures
 		this._g_oProductInfo.push({ id: nItemSrl, name: sItemName, category: sCategory, brand: sBrand, variant: sVariant, price: nItemPrice, quantity: nTotalQuantity });
 		return true;
