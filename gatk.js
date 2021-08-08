@@ -6,8 +6,8 @@
  * Released under the commercial license
  */
 
-var version = '0.1.5';
-var version_date = '2015-11-29';
+var version = '0.1.6';
+var version_date = '2015-12-04';
 var 
 	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyImmediately = 'bi',
@@ -618,19 +618,36 @@ var gatkPurchase =
 	{
 		var nElement = this._g_oProductInfo.length;
 		var nTaxAmnt = nRevenue * 0.1;
-		for( var i = 0; i < nElement; i++ )
+		
+		if( nElement == 0 )
 		{
-			ga('ec:addProduct', { // Provide product details in an productFieldObject.
-				'id': this._g_oProductInfo[i].id, // Product ID (string).
-				'name': this._g_oProductInfo[i].name, // Product name (string).
-				'category': this._g_oProductInfo[i].category, // Product category (string).
-				'brand': this._g_oProductInfo[i].brand, // Product brand (string).
-				'variant': this._g_oProductInfo[i].variant, // Product variant (string).
-				'price': this._g_oProductInfo[i].price, // Product price (currency).
-				'quantity': this._g_oProductInfo[i].quantity, // Product quantity (number).
-				'coupon': sCoupon  // Product coupon (string).
-			});
-			
+			for( var i = 0; i < nElement; i++ )
+			{
+				ga('ec:addProduct', { // Provide product details in an productFieldObject.
+					'id': this._g_oProductInfo[i].id, // Product ID (string).
+					'name': this._g_oProductInfo[i].name, // Product name (string).
+					'category': this._g_oProductInfo[i].category, // Product category (string).
+					'brand': this._g_oProductInfo[i].brand, // Product brand (string).
+					'variant': this._g_oProductInfo[i].variant, // Product variant (string).
+					'price': this._g_oProductInfo[i].price, // Product price (currency).
+					'quantity': this._g_oProductInfo[i].quantity, // Product quantity (number).
+					'coupon': sCoupon  // Product coupon (string).
+				});
+				
+				// purchase action should be sent for every single item
+				ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
+					'id': nOrderSrl,             // (Required) Transaction id (string).
+					'affiliation': sAffiliation, // Affiliation (string).
+					'revenue': nRevenue,         // Revenue (currency).
+					'tax': nTaxAmnt,             // Tax (currency).
+					'shipping': nShippingCost,   // Shipping (currency).
+					'coupon': sCoupon            // Transaction coupon (string).
+				});
+				_sendGaEventWithoutInteraction( 'checkout', 'purchased', _g_sPrefixPurchased + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
+			}
+		}
+		else
+		{
 			// purchase action should be sent for every single item
 			ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
 				'id': nOrderSrl,             // (Required) Transaction id (string).
@@ -640,9 +657,8 @@ var gatkPurchase =
 				'shipping': nShippingCost,   // Shipping (currency).
 				'coupon': sCoupon            // Transaction coupon (string).
 			});
-			_sendGaEventWithoutInteraction( 'checkout', 'purchased', _g_sPrefixPurchased + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
 		}
-	}
+	}		
 }
 
 var gatkMypage = 
