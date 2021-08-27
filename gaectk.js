@@ -4,8 +4,8 @@
  */
 // refers to https://developers.google.com/analytics/devguides/collection/ga4/ecommerce
 // refers to https://ga-dev-tools.web.app/ga4/dimensions-metrics-explorer/ 
-var _g_sGaectkVersion = '1.0.1';
-var _g_sGaectkVersionDate = '2021-08-02';
+var _g_sGaectkVersion = '1.1.1';
+var _g_sGaectkVersionDate = '2021-08-27';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
 var _g_bEcRequired = false; // for UA only
@@ -23,9 +23,11 @@ var
 var _g_sAffiliation = 'myshop';
 var _g_sSecretPassphrase = "Secret Passphrase";
 var _g_bSentConversionPageView = false;
+var _g_aImageElement = [];
 
 function sendVitualPageView(sVirtualUrl, sPageTitle) 
 {
+	console.log('warning! - this method is not implemented yet');
 	if(_g_bSentConversionPageView)
 		return false;
 
