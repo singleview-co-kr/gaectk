@@ -1,17 +1,21 @@
 /*
- * Google Analytics V3, v4 Enhance Ecommerce JavaScript Library
+ * Universal Analytics, Google Analytics v4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
 // refers to https://developers.google.com/analytics/devguides/collection/ga4/ecommerce
-// refers to https://ga-dev-tools.web.app/ga4/dimensions-metrics-explorer/ 
-var _g_sGaectkVersion = '1.1.1';
-var _g_sGaectkVersionDate = '2021-08-27';
+// refers to https://ga-dev-tools.web.app/ga4/dimensions-metrics-explorer/
+// refers to https://www.simoahava.com/analytics/enhanced-ecommerce-guide-for-google-tag-manager/
+// refers to https://www.simoahava.com/analytics/ecommerce-tips-google-tag-manager/
+var _g_sGaectkVersion = '1.2.0';
+var _g_sGaectkVersionDate = '2021-09-02';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
-var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
 var _g_bEcRequired = false; // for UA only
+var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
+var _g_sGa4DatastreamId = null;
+var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
 var 
 	_g_sPrefixViewDetail = 'vd',
-	_g_sPrefixBuyImmediately = 'bi',
+	_g_sPrefixBuyNow = 'bn',
 	_g_sPrefixAddToCart = 'atc',
 	_g_sPrefixRemoveFromCart = 'rfc',
 	_g_sPrefixCheckoutSelected = 'cs',
@@ -25,43 +29,31 @@ var _g_sSecretPassphrase = "Secret Passphrase";
 var _g_bSentConversionPageView = false;
 var _g_aImageElement = [];
 
-function sendVitualPageView(sVirtualUrl, sPageTitle) 
-{
-	console.log('warning! - this method is not implemented yet');
-	if(_g_bSentConversionPageView)
-		return false;
-
-	if(_g_bGa4DatastreamIdLoaded)
-	{
-		gtag('config', 'UA-XXXXXX-13', {
-			'page_title' : sVirtualUrl, // example 'my-virtualpage-title',
-			'page_path': sPageTitle // '/my-virtualpage-path'
-			});
-		gtag('config', 'G-XXXXXXXXXX', {
-			'page_title' : sVirtualUrl, // example 'my-virtualpage-title',
-			'page_path': sPageTitle // '/my-virtualpage-path'
-			});
-	}
-	if(_g_bUaPropertyLoaded)
-	{
-	}
-	_g_bSentConversionPageView = true;
-}
 function setUtmParamsGaectk(sSource, sMedium, sCampaign, sKeyword, sContentVariation)
 {
 	if(_g_bGa4DatastreamIdLoaded)
 	{
-		/*if(sSource != '')
-			ga('set', 'firstUserSource', sSource);
-		if( sMedium != '' )
-			ga('set', 'firstUserMedium', sMedium);
-		if( sCampaign != '' )
-			ga('set', 'firstUserCampaignName', sCampaign);
-		if( sKeyword != '' )
-			ga('set', 'firstUserGoogleAdsKeyword', sKeyword);
-		if( sContentVariation != '' )
-			ga('set', 'contentGroup', sContentVariation);*/
+		if(typeof sSource === 'undefined' || sSource === null || sSource === undefined || sSource.length == 0)
+			sSource = '';
+		if(typeof sMedium === 'undefined' || sMedium === null || sMedium === undefined || sMedium.length == 0)
+			sMedium = '';
+		if(typeof sCampaign === 'undefined' || sCampaign === null || sCampaign === undefined || sMedium.length == 0)
+			sCampaign = '';
+		if(typeof sContentVariation === 'undefined' || sContentVariation === null || sContentVariation === undefined || sContentVariation.length == 0)
+			sContentVariation = '';
+
+		// https://stackoverflow.com/questions/50231721/how-to-track-utm-source-in-google-analytics-using-gtag
+		// GA v4 does not handle term
+		gtag('config', _g_sGa4DatastreamId, {
+			campaign: {
+				source: sSource,
+				medium: sMedium,
+				name: sCampaign,
+				content: sContentVariation
+			}
+		});
 	}
+	
 	if(_g_bUaPropertyLoaded)
 	{
 		if(sSource != '')
@@ -172,13 +164,13 @@ function sendClickEventGaectk(sCategory, sPageTitle, sLocation, sWindow)
 	}
 }
 
-function _sendGaEventWithInteraction( sEventCategory, sEventAction, sEventLabel, nEventValue )
+function _sendGaEventWithInteraction(sEventCategory, sEventAction, sEventLabel, nEventValue)
 {
 	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
 	// Send data using an event just after set ec-action
 	if(!_g_bUaPropertyLoaded) // this global method is for UA only
 		return false;
-	if( nEventValue === undefined )
+	if(nEventValue === undefined)
 	{
 		ga('send', 'event',  {
 			'eventCategory': sEventCategory,   // Required.
@@ -188,7 +180,7 @@ function _sendGaEventWithInteraction( sEventCategory, sEventAction, sEventLabel,
 	}
 	else
 	{
-		nEventValue = _enforceInt( nEventValue );
+		nEventValue = _enforceInt(nEventValue);
 		ga('send', 'event',  {
 			'eventCategory': sEventCategory,   // Required.
 			'eventAction': sEventAction,      // Required.
@@ -227,24 +219,24 @@ function _sendGaEventWithoutInteraction(sEventCategory, sEventAction, sEventLabe
 	console.log('_sendGaEventWithoutInteraction')
 }
 
-function _sendCheckoutAction( nStepNumber, sOption )
+function _sendCheckoutAction(nStepNumber, sOption)
 {
 	if(!_g_bUaPropertyLoaded) // this global method is for UA only
 		return false;
-	switch( arguments.length )
+	switch(arguments.length)
 	{
 		case 1:
-			if( arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0 )
+			if(arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0)
 				break;
 			else
 			{
-				ga('ec:setAction','checkout', {	'step': nStepNumber });
+				ga('ec:setAction','checkout', {'step': nStepNumber});
 				return;
 			}
 			break;
 		case 2:
-			if( arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0 ||
-				arguments[1] === null || arguments[1] === undefined || arguments[1].length == 0 )
+			if(arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0 ||
+				arguments[1] === null || arguments[1] === undefined || arguments[1].length == 0)
 				break;
 			else
 			{
@@ -295,6 +287,20 @@ function _enforceInt(nEventValue)
 		return nEventValue;
 }
 
+function _parseUrl(sElem)
+{
+	// https://stackoverflow.com/questions/27745/getting-parts-of-a-url-regex
+	const aUrlElem = ['href','protocol','host','hostname','port','pathname','search','hash'];
+	if(aUrlElem.includes(sElem))
+	{
+		var a = document.createElement('a');
+		a.href = window.location.href; 
+		return a[sElem]; 
+	}
+	else
+		return 'undefined';
+}
+
 var gaectkHeader = 
 {
 	init : function(aTrackingId)
@@ -307,7 +313,20 @@ var gaectkHeader =
 		}
 		for(var i = 0; i < aTrackingId.length; i++)
 		{
-			sTrackingId = aTrackingId[i]
+			sTrackingId = aTrackingId[i];
+			if(sTrackingId.search(/^GTM-/gm) == 0) // string like 'GTM-XXXXXXXXXX'
+			{
+				if(window.dataLayer)  // https://stackoverflow.com/questions/55852511/how-to-check-if-a-google-tag-is-already-loaded-on-an-html-page
+				{
+					_g_bGtmIdLoaded = true;
+					console.log('GTM activated');
+					// if GTM has loaded: https://www.simoahava.com/analytics/notify-page-google-tag-manager-loaded/
+				}
+				else
+				{
+					console.log('Warning! You requested GTM activation w/o proper initialization.');
+				}
+			}
 			if(sTrackingId.search(/^UA-/gm) == 0) // string like 'UA-XXXXXX-xx'
 			{
 				if(typeof ga === 'function')
@@ -319,16 +338,40 @@ var gaectkHeader =
 					}
 					console.log('UA activated')
 				}
+				else
+				{
+					console.log('Warning! You requested UA activation w/o proper initialization.');
+				}
 			}
 			if(sTrackingId.search(/^G-/gm) == 0) // string like 'G-XXXXXXXXXX'
 			{
 				if(typeof gtag === 'function')
 				{
 					_g_bGa4DatastreamIdLoaded = true;
+					_g_sGa4DatastreamId = sTrackingId;
 					console.log('GAv4 activated');
+				}
+				else
+				{
+					console.log('Warning! You requested GAv4 activation w/o proper initialization.');
 				}
 			}
 		}
+		// init validation //
+		if(!_g_bGtmIdLoaded && !_g_bUaPropertyLoaded && !_g_bGa4DatastreamIdLoaded)
+		{
+			alert('you call gaectk.js w/o any GA or GTM account id.\nThis might occur complicated malfunction!');
+			return false;
+		}
+		if(_g_bGtmIdLoaded && (_g_bUaPropertyLoaded || _g_bGa4DatastreamIdLoaded))
+		{
+			alert('Choose GA or GTM only to prevent duplicated hit!\ngaectk will deny send hit!');
+			_g_bGtmIdLoaded = false;
+			_g_bUaPropertyLoaded = false;
+			_g_bGa4DatastreamIdLoaded = false;
+			return false;
+		}
+
 		if(_g_bUaPropertyLoaded)
 		{
 			ga('create', sUaTrackingId, 'auto');
@@ -353,11 +396,11 @@ var gaectkHeader =
 
 var gaectkList = 
 {
-	_g_nListPosition : 1,
-	_g_sListTitle : 'undefined',
-	_g_aProductInfo : [],
+	_g_nListPosition: 1,
+	_g_sListTitle: 'undefined',
+	_g_aProductInfo: [],
 
-	init : function(sListTitle, nCurrentPage, nItemsPerPage)
+	init : function(sListTitle, nCurrentPage, nItemsPerPage)  // sListTitle will be deprecated
 	{
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
 		{
@@ -368,19 +411,19 @@ var gaectkList =
 			nCurrentPage = 1;
 		if(nCurrentPage > 1) // 한페이지에 복수 리스트 모듈이 있는 경우는 메인페이지 혹은 첫페이지로 한정함
 			this._g_nListPosition = nItemsPerPage * (nCurrentPage - 1) + 1;
-		if(typeof sListTitle !== 'undefined' && sListTitle !== null && sListTitle !== undefined && sListTitle.length > 0)
-			this._g_sListTitle = sListTitle;
+		this._g_sListTitle = _parseUrl('pathname');  // replace with GTM default variable Page Path?
 		return true;
 	},
 	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant)
 	{
+		// UA would be deprecated someday hence this construction is GAv4 biased
 		this._g_aProductInfo.push({ item_id: nItemSrl,
 									item_name: sItemName,
 									affiliation: _g_sAffiliation,
 									//coupon: "SUMMER_FUN",
 									//currency: "USD",
 									//discount: 2.22,
-									index: this._g_nListPosition,
+									index: this._g_nListPosition++,
 									item_brand: sBrand,
 									item_category: sCategory,
 									//item_category2: "Adult",
@@ -394,43 +437,68 @@ var gaectkList =
 									//price: 9.99,
 									//quantity: 1
 								 });
-		this._increasePosition();
-		return true;
 	},
 	patchImpression : function(nItemChunk)
 	{
 		if(this._g_aProductInfo.length > 0)
 		{
-			if(_g_bGa4DatastreamIdLoaded)
+			if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 			{
-				gtag("event", "view_item_list", {
-					currency: "KRW",
-					item_list_id: this._g_sListTitle,
-					item_list_name: this._g_sListTitle,
-					items: this._g_aProductInfo
-				  });
-			}
-			if(_g_bUaPropertyLoaded)
-			{
-				if(typeof nItemChunk === 'undefined')
-					nItemChunk = 30;
-
-				if(nItemChunk == 0)
-					nItemChunk = 30;
-
+				var aProduct = [];
 				for(var i = 0; i < this._g_aProductInfo.length; i++)
 				{
-					ga('ec:addImpression', {
-						'id': this._g_aProductInfo[i].item_id, // Product ID (string).
-						'name': this._g_aProductInfo[i].item_name, // Product name (string).
-						'category': this._g_aProductInfo[i].item_category, // Product category (string).
-						'brand': this._g_aProductInfo[i].item_brand, // Product brand (string).
-						'variant': this._g_aProductInfo[i].item_variant, // Product variant (string).
-						'list': this._g_sListTitle,
-						'position': this._g_aProductInfo[i].index // 'position' indicates the product position in the list.
+					aProduct.push({
+						id: this._g_aProductInfo[i].item_id, 
+						name: this._g_aProductInfo[i].item_name, 
+						category: this._g_aProductInfo[i].item_category,
+						brand: this._g_aProductInfo[i].item_brand, 
+						variant: this._g_aProductInfo[i].item_variant,
+						list: this._g_sListTitle,
+						position: this._g_aProductInfo[i].index
 					});
-					if(i > 0 && i % nItemChunk == 0)
-						_sendGaEventWithoutInteraction( 'eec', 'send', 'eec_addImp', 0 );
+				}
+				window.dataLayer = window.dataLayer || [];
+				window.dataLayer.push({
+					event: 'eec.impressionView',
+					ecommerce: {
+						actionField: {
+							list: this._g_sListTitle
+						},
+						impressions: aProduct
+					}
+				});
+			}
+			else  // GA direct Mode
+			{
+				if(_g_bGa4DatastreamIdLoaded)  // GAv4
+				{
+					gtag("event", "view_item_list", {
+						currency: "KRW",
+						item_list_id: this._g_sListTitle,
+						item_list_name: this._g_sListTitle,
+						items: this._g_aProductInfo
+					  });
+				}
+				if(_g_bUaPropertyLoaded)  // UA
+				{
+					if(typeof nItemChunk === 'undefined')
+						nItemChunk = 30;
+					if(nItemChunk == 0)
+						nItemChunk = 30;
+					for(var i = 0; i < this._g_aProductInfo.length; i++)
+					{
+						ga('ec:addImpression', {
+							'id': this._g_aProductInfo[i].item_id, // Product ID (string).
+							'name': this._g_aProductInfo[i].item_name, // Product name (string).
+							'category': this._g_aProductInfo[i].item_category, // Product category (string).
+							'brand': this._g_aProductInfo[i].item_brand, // Product brand (string).
+							'variant': this._g_aProductInfo[i].item_variant, // Product variant (string).
+							'list': this._g_sListTitle,
+							'position': this._g_aProductInfo[i].index // 'position' indicates the product position in the list.
+						});
+						if(i > 0 && i % nItemChunk == 0)
+							_sendGaEventWithoutInteraction( 'eec', 'send', 'eec_addImp', 0 );
+					}
 				}
 			}
 		}
@@ -450,43 +518,67 @@ var gaectkList =
 		}
 		if(aSingleItemClicked.length)
 		{
-			if(_g_bGa4DatastreamIdLoaded)
+			var sEventLbl = _g_sPrefixViewDetail + '_on_' + this._g_sListTitle +'_pos:' + aSingleItemClicked[0].index + '_' + aSingleItemClicked[0].item_id+'_'+aSingleItemClicked[0].item_name;
+			if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 			{
-				gtag("event", "select_item", {
-					item_list_id: this._g_sListTitle,
-					item_list_name: this._g_sListTitle,
-					items: aSingleItemClicked
+				window.dataLayer = window.dataLayer || [];
+				window.dataLayer.push({
+					event: 'eec.impressionClick',
+					sv_event_lbl: sEventLbl,
+					ecommerce: {
+						click: {
+							actionField: {
+								list: this._g_sListTitle
+							},
+							products: [{
+								id: aSingleItemClicked[0].item_id,
+								name: aSingleItemClicked[0].item_name,
+								category: aSingleItemClicked[0].item_category,
+								brand: aSingleItemClicked[0].item_brand,
+								variant: aSingleItemClicked[0].item_variant,
+								position: aSingleItemClicked[0].index
+								// dimension3: '1500 pages'
+							}]
+						}
+					}
 				});
-				console.log('clicked-GAv4')
 			}
-			if(_g_bUaPropertyLoaded)
+			else  // GA direct Mode
 			{
-				ga('ec:addProduct', {
-					'id': aSingleItemClicked[0].item_id, // Product ID (string).
-					'name': aSingleItemClicked[0].item_name, // Product name (string).
-					'category': aSingleItemClicked[0].item_category, // Product category (string).
-					'brand': aSingleItemClicked[0].item_brand, // Product brand (string).
-					'variant': aSingleItemClicked[0].item_variant, // Product variant (string).
-					'list': this._g_sListTitle,
-					'position': aSingleItemClicked[0].index // 'position' indicates the product position in the list.
-				});
-				ga('ec:setAction', 'click', { list: this._g_sListTitle } );
-				_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixViewDetail + '_on_' + this._g_sListTitle +'_pos:' + aSingleItemClicked[0].index + '_' + aSingleItemClicked[0].item_id+'_'+aSingleItemClicked[0].item_name );
-				console.log('clicked-UA')
+				if(_g_bGa4DatastreamIdLoaded)  // GAv4
+				{
+					gtag("event", "select_item", {
+						item_list_id: this._g_sListTitle,
+						item_list_name: this._g_sListTitle,
+						items: aSingleItemClicked
+					});
+					console.log('clicked-GAv4')
+				}
+				if(_g_bUaPropertyLoaded)  // UA
+				{
+					ga('ec:addProduct', {
+						'id': aSingleItemClicked[0].item_id, // Product ID (string).
+						'name': aSingleItemClicked[0].item_name, // Product name (string).
+						'category': aSingleItemClicked[0].item_category, // Product category (string).
+						'brand': aSingleItemClicked[0].item_brand, // Product brand (string).
+						'variant': aSingleItemClicked[0].item_variant, // Product variant (string).
+						'list': this._g_sListTitle,
+						'position': aSingleItemClicked[0].index // 'position' indicates the product position in the list.
+					});
+					ga('ec:setAction', 'click', { list: this._g_sListTitle } );
+					_sendGaEventWithoutInteraction( 'button', 'clicked', sEventLbl);
+					console.log('clicked-UA')
+				}
 			}
 		}
-	},
-	_increasePosition : function()
-	{
-		this._g_nListPosition++;
-		return true;
 	}
 }
 
 var gaectkDetail = 
 {
-	_g_aProductInfo : [],
-	_g_bFacebookConvLoaded : false,
+	_g_aProductInfo: [],
+	_g_sListTitle: 'undefined',
+	_g_bFacebookConvLoaded: false,
 
 	init : function()
 	{
@@ -497,6 +589,7 @@ var gaectkDetail =
 		}
 		if(typeof(fbq) != 'undefined' && fbq != null) 
 			this._g_bFacebookConvLoaded = true;
+		this._g_sListTitle = _parseUrl('pathname');
 		return true;
 	},
 	loadItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice)
@@ -526,27 +619,54 @@ var gaectkDetail =
 	},
 	patchDetail : function()
 	{
-		if(_g_bGa4DatastreamIdLoaded)
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			gtag("event", "view_item", {
-				currency: "KRW",
-				value: this._g_aProductInfo[0].price / 2,  // discount event value, not sure to buy
-				items: this._g_aProductInfo
-				});
-			console.log('event - view_item - GAv4')
-		}
-		if(_g_bUaPropertyLoaded)
-		{
-			ga('ec:addProduct', { // Provide product details in an productFieldObject.
-				'id': this._g_aProductInfo[0].item_id, // Product ID (string).
-				'name': this._g_aProductInfo[0].item_name, // Product name (string).
-				'category': this._g_aProductInfo[0].item_category, // Product category (string).
-				'brand': this._g_aProductInfo[0].item_brand, // Product brand (string).
-				'variant': this._g_aProductInfo[0].item_variant, // Product variant (string).
-				'position': 1, // Product position (number).
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.detail',
+				ecommerce: {
+					detail: {
+						actionField: {
+							list: this._g_sListTitle
+						},
+						products: [{
+							id: this._g_aProductInfo[0].item_id,
+							name: this._g_aProductInfo[0].item_name,
+							category: this._g_aProductInfo[0].item_category,
+							brand: this._g_aProductInfo[0].item_brand,
+							variant: this._g_aProductInfo[0].item_variant
+							//dimension3: 'Ecommerce',
+							//metric5: 12,
+							//metric6: 1002
+						}]
+					}
+				}
 			});
-			ga('ec:setAction', 'detail'); // Detail action.
-			console.log('event - view_item - UA')
+		}
+		else  // GA direct Mode
+		{
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				gtag("event", "view_item", {
+					currency: "KRW",
+					value: this._g_aProductInfo[0].price / 2,  // discount event value, not sure to buy
+					items: this._g_aProductInfo
+					});
+				console.log('event - view_item - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				ga('ec:addProduct', { // Provide product details in an productFieldObject.
+					'id': this._g_aProductInfo[0].item_id, // Product ID (string).
+					'name': this._g_aProductInfo[0].item_name, // Product name (string).
+					'category': this._g_aProductInfo[0].item_category, // Product category (string).
+					'brand': this._g_aProductInfo[0].item_brand, // Product brand (string).
+					'variant': this._g_aProductInfo[0].item_variant // Product variant (string).
+					//'position': 1, // Product position (number).
+				});
+				ga('ec:setAction', 'detail'); // Detail action.
+				console.log('event - view_item - UA')
+			}
 		}
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendViewContent();
@@ -556,22 +676,29 @@ var gaectkDetail =
 	{
 		var nTotalQuantity = _enforceInt(nTotalQuantity);
 		var nTotalPrice = nTotalQuantity * this._g_aProductInfo[0].price;
-		if(!nTotalPrice)
-			return false;
-		if(_g_bGa4DatastreamIdLoaded)
+		var sEventLbl = _g_sPrefixBuyNow + '_' + this._g_aProductInfo[0].item_id + '_' + this._g_aProductInfo[0].item_name;
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			gtag("event", "begin_checkout", {
-				currency: "KRW",
-				value: nTotalPrice,
-				// coupon: '',
-				items: this._g_aProductInfo
-				});
-			console.log('event - begin_checkout - GAv4')
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'sv.buyNow',
+				// ecommerce: null,
+				sv_event_lbl: sEventLbl,
+				sv_event_val: nTotalPrice
+			});
 		}
-		if(_g_bUaPropertyLoaded)
+		else  // GA direct Mode
 		{
-			_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixBuyImmediately + '_' + this._g_aProductInfo[0].item_id + '_' + this._g_aProductInfo[0].item_name, nTotalPrice );
-			console.log('event - begin_checkout - UA')
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				gtag("event", sEventLbl);
+				console.log('event - buy now - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				_sendGaEventWithoutInteraction( 'button', 'clicked', sEventLbl, nTotalPrice );
+				console.log('event - buy now - UA')
+			}
 		}
 		if( this._g_bFacebookConvLoaded )
 			this._fbSendCheckoutInitiation();
@@ -581,31 +708,62 @@ var gaectkDetail =
 	{
 		var nTotalQuantity = _enforceInt(nTotalQuantity);
 		var nTotalPrice = nTotalQuantity * this._g_aProductInfo[0].price;
-		
-		if(_g_bGa4DatastreamIdLoaded)
+		var sEventLbl = _g_sPrefixAddToCart + '_' + this._g_aProductInfo[0].item_id + '_' + this._g_aProductInfo[0].item_name;
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			this._g_aProductInfo[0].quantity = nTotalQuantity;
-			gtag("event", "add_to_cart", {
-				currency: "KRW",
-				value: nTotalPrice / 2,  // discount event value, not sure to buy
-				items: this._g_aProductInfo
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.add',
+				sv_event_lbl: sEventLbl,
+				sv_event_val: nTotalPrice,
+				ecommerce: {
+					add: {
+						actionField: {
+							list: this._g_sListTitle,
+						},
+						products: [{
+							id: this._g_aProductInfo[0].item_id,
+							name: this._g_aProductInfo[0].item_name,
+							category: this._g_aProductInfo[0].item_category,
+							brand: this._g_aProductInfo[0].item_brand,
+							variant: this._g_aProductInfo[0].item_variant,
+							price: nTotalPrice,
+							quantity: nTotalQuantity
+							//dimension3: 'Ecommerce',
+							//metric5: 12,
+							//metric6: 1002
+						}]
+					}
+				}
 			});
-			console.log('event - add_to_cart - GAv4')
 		}
-		if(_g_bUaPropertyLoaded)
+		else  // GA direct Mode
 		{
-			ga('ec:addProduct', {
-				'id': this._g_aProductInfo[0].item_id, // Product ID (string).
-				'name': this._g_aProductInfo[0].item_name, // Product name (string).
-				'category': this._g_aProductInfo[0].item_category, // Product category (string).
-				'brand': this._g_aProductInfo[0].item_brand, // Product brand (string).
-				'variant': this._g_aProductInfo[0].item_variant, // Product variant (string).
-				'price': this._g_aProductInfo[0].price,
-				'quantity': nTotalQuantity
-			});
-			ga('ec:setAction', 'add');
-			_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixAddToCart + '_' + this._g_aProductInfo[0].item_id + '_' + this._g_aProductInfo[0].item_name, nTotalPrice );
-			console.log('event - add_to_cart - UA')
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				this._g_aProductInfo[0].quantity = nTotalQuantity;
+				gtag("event", "add_to_cart", {
+					currency: "KRW",
+					value: nTotalPrice / 2,  // discount event value, not sure to buy
+					items: this._g_aProductInfo
+				});
+				console.log('event - add_to_cart - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				ga('ec:addProduct', {
+					'id': this._g_aProductInfo[0].item_id, // Product ID (string).
+					'name': this._g_aProductInfo[0].item_name, // Product name (string).
+					'category': this._g_aProductInfo[0].item_category, // Product category (string).
+					'brand': this._g_aProductInfo[0].item_brand, // Product brand (string).
+					'variant': this._g_aProductInfo[0].item_variant, // Product variant (string).
+					'price': nTotalPrice,
+					'quantity': nTotalQuantity
+				});
+				ga('ec:setAction', 'add');
+				_sendGaEventWithoutInteraction( 'button', 'clicked', sEventLbl, nTotalPrice);
+				console.log('event - add_to_cart - UA')
+			}
 		}
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendItemsToCart();
@@ -636,9 +794,10 @@ var gaectkDetail =
 }
 var gaectkCart = 
 {
-	_g_aProductInfo : [],
-	_g_bFacebookConvLoaded : false,
-	_g_sCoupon : false,
+	_g_aProductInfo: [],
+	_g_bFacebookConvLoaded: false,
+	_g_sOptionCartPage: 'cart page',
+	_g_sCoupon: false,
 
 	init : function()
 	{
@@ -734,7 +893,7 @@ var gaectkCart =
 				if( aCartSrl[j] != '' && this._g_aProductInfo[i].cartid == aCartSrl[j] )
 				{
 					aCartToCheckout.push(this._g_aProductInfo[i]);
-					//_sendGaEventWithoutInteraction( 'checkout', 'started', _g_sPrefixCheckoutSelected + '_' + this._g_oProductInfo[i].id+'_' + this._g_oProductInfo[i].name, this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity );
+					//_sendGaEventWithoutInteraction('checkout', 'started', _g_sPrefixCheckoutSelected + '_' + this._g_aProductInfo[i].id+'_' + this._g_aProductInfo[i].name, this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity);
 					aCartSrl.shift();
 					nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;
 				}
@@ -742,34 +901,71 @@ var gaectkCart =
 		}
 		if(!nTotalPrice)
 			return false;
-
-		if(_g_bGa4DatastreamIdLoaded)
+		
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			gtag("event", "begin_checkout", {
-				currency: "KRW",
-				value: nTotalPrice,
-				coupon: this._g_sCoupon,
-				items: aCartToCheckout
-				});
-			console.log('event - begin_checkout selected - GAv4')
-		}
-		if(_g_bUaPropertyLoaded)
-		{
-			for( var i = 0; i < aCartToCheckout.length; i++ )
+			var aProduct = [];
+			for(var i = 0; i < aCartToCheckout.length; i++)
 			{
-				ga('ec:addProduct', { // Provide product details in an productFieldObject.
-					'id': aCartToCheckout[i].item_id, // Product ID (string).
-					'name': aCartToCheckout[i].item_name, // Product name (string).
-					'category': aCartToCheckout[i].item_category, // Product category (string).
-					'brand': aCartToCheckout[i].item_brand, // Product brand (string).
-					'variant': aCartToCheckout[i].item_variant, // Product variant (string).
-					'price': aCartToCheckout[i].price, // Product price (currency).
-					'quantity': aCartToCheckout[i].quantity // Product quantity (number).
+				aProduct.push({
+					id: aCartToCheckout[i].item_id, // Product ID (string).
+					name: aCartToCheckout[i].item_name, // Product name (string).
+					category: aCartToCheckout[i].item_category, // Product category (string).
+					brand: aCartToCheckout[i].item_brand, // Product brand (string).
+					variant: aCartToCheckout[i].item_variant, // Product variant (string).
+					price: aCartToCheckout[i].price, // Product price (currency).
+					quantity: aCartToCheckout[i].quantity // Product quantity (number).
+					//dimension3: 'Ecommerce',
+					//metric5: 12,
+					//metric6: 1002
 				});
 			}
-			_sendCheckoutAction( 1, 'cart page' );
-			_sendGaEventWithoutInteraction( 'checkout', 'started', _g_sPrefixCheckoutAll, nTotalPrice ); // Send data using an event after set ec-action
-			console.log('event - begin_checkout selected - UA')
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.checkout',
+				// sv_event_lbl: _g_sPrefixCheckoutSelected,
+				sv_event_val: nTotalPrice,
+				ecommerce: {
+					checkout: {
+						actionField: {
+							step: 1,
+							option: this._g_sOptionCartPage
+						},
+						products: aProduct
+					}
+				}
+			});
+		}
+		else  // GA direct Mode
+		{
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				gtag("event", "begin_checkout", {
+					currency: "KRW",
+					value: nTotalPrice,
+					coupon: this._g_sCoupon,
+					items: aCartToCheckout
+					});
+				console.log('event - begin_checkout selected - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				for(var i = 0; i < aCartToCheckout.length; i++)
+				{
+					ga('ec:addProduct', { // Provide product details in an productFieldObject.
+						'id': aCartToCheckout[i].item_id, // Product ID (string).
+						'name': aCartToCheckout[i].item_name, // Product name (string).
+						'category': aCartToCheckout[i].item_category, // Product category (string).
+						'brand': aCartToCheckout[i].item_brand, // Product brand (string).
+						'variant': aCartToCheckout[i].item_variant, // Product variant (string).
+						'price': aCartToCheckout[i].price, // Product price (currency).
+						'quantity': aCartToCheckout[i].quantity // Product quantity (number).
+					});
+				}
+				_sendCheckoutAction(1, this._g_sOptionCartPage);
+				_sendGaEventWithoutInteraction('checkout', 'started', _g_sPrefixCheckoutSelected, nTotalPrice); // Send data using an event after set ec-action
+				console.log('event - begin_checkout selected - UA')
+			}
 		}
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendCheckoutInitiation();
@@ -781,41 +977,72 @@ var gaectkCart =
 			return;
 
 		var nTotalPrice = 0;
-		for(var i = 0; i < nElement; i++)
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;
-		}
-		if(!nTotalPrice)
-			return false;
-
-		if(_g_bGa4DatastreamIdLoaded)
-		{
-			gtag("event", "begin_checkout", {
-				currency: "KRW",
-				value: nTotalPrice,
-				coupon: this._g_sCoupon,
-				items: this._g_aProductInfo
-				});
-			console.log('event - begin_checkout all - GAv4')
-		}
-		if(_g_bUaPropertyLoaded)
-		{
-			for( var i = 0; i < nElement; i++ )
+			var aProduct = [];
+			for(var i = 0; i < nElement; i++)
 			{
-				ga('ec:addProduct', { // Provide product details in an productFieldObject.
-					'id': this._g_oProductInfo[i].id, // Product ID (string).
-					'name': this._g_oProductInfo[i].name, // Product name (string).
-					'category': this._g_oProductInfo[i].category, // Product category (string).
-					'brand': this._g_oProductInfo[i].brand, // Product brand (string).
-					'variant': this._g_oProductInfo[i].variant, // Product variant (string).
-					'price': this._g_oProductInfo[i].price, // Product price (currency).
-					'quantity': this._g_oProductInfo[i].quantity // Product quantity (number).
+				nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity
+				aProduct.push({
+					id: this._g_aProductInfo[i].item_id, // Product ID (string).
+					name: this._g_aProductInfo[i].item_name, // Product name (string).
+					category: this._g_aProductInfo[i].item_category, // Product category (string).
+					brand: this._g_aProductInfo[i].item_brand, // Product brand (string).
+					variant: this._g_aProductInfo[i].item_variant, // Product variant (string).
+					price: this._g_aProductInfo[i].price, // Product price (currency).
+					quantity: this._g_aProductInfo[i].quantity // Product quantity (number).
+					//dimension3: 'Ecommerce',
+					//metric5: 12,
+					//metric6: 1002
 				});
-				nTotalPrice += this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity;
 			}
-			_sendCheckoutAction( 1, 'cart page' );
-			_sendGaEventWithoutInteraction( 'checkout', 'started', _g_sPrefixCheckoutAll, nTotalPrice ); // Send data using an event after set ec-action
-			console.log('event - begin_checkout all - UA')
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.checkout',
+				// sv_event_lbl: _g_sPrefixCheckoutSelected,
+				sv_event_val: nTotalPrice,
+				ecommerce: {
+					checkout: {
+						actionField: {
+							step: 1,
+							option: this._g_sOptionCartPage
+						},
+						products: aProduct
+					}
+				}
+			});
+		}
+		else  // GA direct Mode
+		{
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				gtag("event", "begin_checkout", {
+					currency: "KRW",
+					value: nTotalPrice,
+					coupon: this._g_sCoupon,
+					items: this._g_aProductInfo
+					});
+				console.log('event - begin_checkout all - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				for(var i = 0; i < nElement; i++)
+				{
+					nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;
+					ga('ec:addProduct', { // Provide product details in an productFieldObject.
+						'id': this._g_aProductInfo[i].item_id, // Product ID (string).
+						'name': this._g_aProductInfo[i].item_name, // Product name (string).
+						'category': this._g_aProductInfo[i].item_category, // Product category (string).
+						'brand': this._g_aProductInfo[i].item_brand, // Product brand (string).
+						'variant': this._g_aProductInfo[i].item_variant, // Product variant (string).
+						'price': this._g_aProductInfo[i].price, // Product price (currency).
+						'quantity': this._g_aProductInfo[i].quantity // Product quantity (number).
+					});
+				}
+				_sendCheckoutAction(1, thi._g_sOptionCartPage);
+				_sendGaEventWithoutInteraction('checkout', 'started', _g_sPrefixCheckoutAll, nTotalPrice); // Send data using an event after set ec-action
+				console.log('event - begin_checkout all - UA')
+			}
 		}
 		if( this._g_bFacebookConvLoaded )
 			this._fbSendCheckoutInitiation();
@@ -827,40 +1054,73 @@ var gaectkCart =
 			return;
 
 		var nTotalPrice = 0;
-		for(var i = 0; i < nElement; i++)
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;// * -1;
-		}
-		if(!nTotalPrice)
-			return false;
-
-		if(_g_bGa4DatastreamIdLoaded)
-		{
-			gtag("event", "remove_from_cart", {
-				currency: "KRW",
-				value: nTotalPrice,
-				items: this._g_aProductInfo
+			var aProduct = [];
+			for(var i = 0; i < nElement; i++)
+			{
+				nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity // plus value
+				aProduct.push({
+					id: this._g_aProductInfo[i].item_id,
+					name: this._g_aProductInfo[i].item_name,
+					category: this._g_aProductInfo[i].item_category,
+					brand: this._g_aProductInfo[i].item_brand,
+					variant: this._g_aProductInfo[i].item_variant,
+					price: this._g_aProductInfo[i].price,
+					quantity: this._g_aProductInfo[i].quantity
+					//dimension3: 'Ecommerce',
+					//metric5: 12,
+					//metric6: 1002
 				});
-			console.log('event - remove_from_cart all - GAv4')
+			}
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.remove',
+				sv_event_val: nTotalPrice,
+				ecommerce: {
+					remove: {
+						actionField: {
+							list: this._g_sOptionCartPage
+							},
+						products: aProduct
+					}
+				}
+			});
 		}
-		if(_g_bUaPropertyLoaded)
+		else  // GA direct Mode
 		{
 			for( var i = 0; i < nElement; i++ )
 			{
-				ga('ec:addProduct', { // Provide product details in an productFieldObject.
-					'id': this._g_aProductInfo[i].item_id, // Product ID (string).
-					'name': this._g_aProductInfo[i].item_name, // Product name (string).
-					'category': this._g_aProductInfo[i].item_category, // Product category (string).
-					'brand': this._g_aProductInfo[i].item_brand, // Product brand (string).
-					'variant': this._g_aProductInfo[i].item_variant, // Product variant (string).
-					'price': this._g_aProductInfo[i].price, // Product price (currency).
-					'quantity': this._g_aProductInfo[i].quantity // Product quantity (number).
-				});
-				ga('ec:setAction', 'remove');
-				nTotalPrice = this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
-				_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_aProductInfo[i].item_id + '_' + this._g_aProductInfo[i].item_name, nTotalPrice ); // Send data using an event after set ec-action
+				nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity // plus value
 			}
-			console.log('event - remove_from_cart all - UA')
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				gtag("event", "remove_from_cart", {
+					currency: "KRW",
+					value: nTotalPrice,
+					items: this._g_aProductInfo
+					});
+				console.log('event - remove_from_cart all - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				for( var i = 0; i < nElement; i++ )
+				{
+					ga('ec:addProduct', { // Provide product details in an productFieldObject.
+						'id': this._g_aProductInfo[i].item_id, // Product ID (string).
+						'name': this._g_aProductInfo[i].item_name, // Product name (string).
+						'category': this._g_aProductInfo[i].item_category, // Product category (string).
+						'brand': this._g_aProductInfo[i].item_brand, // Product brand (string).
+						'variant': this._g_aProductInfo[i].item_variant, // Product variant (string).
+						'price': this._g_aProductInfo[i].price, // Product price (currency).
+						'quantity': this._g_aProductInfo[i].quantity // Product quantity (number).
+					});
+					ga('ec:setAction', 'remove');
+					nTotalPrice = this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
+					_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_aProductInfo[i].item_id + '_' + this._g_aProductInfo[i].item_name, nTotalPrice ); // Send data using an event after set ec-action
+				}
+				console.log('event - remove_from_cart all - UA')
+			}
 		}
 	},
 	removeFromCart : function(aTmpCartSrl)
@@ -880,11 +1140,9 @@ var gaectkCart =
 			var nTmpCartSrl = aTmpCartSrl;
 			aCartSrl.push(nTmpCartSrl);
 		}
-		
 		var aCartToRemove = [];
 		var nStackedCartElement = this._g_aProductInfo.length;
 		var nSelectedCartElement = 0;
-		var nTotalPrice = 0;
 		for(var i = 0; i < nStackedCartElement; i++)
 		{
 			nSelectedCartElement = aCartSrl.length;
@@ -893,42 +1151,80 @@ var gaectkCart =
 				if(aCartSrl[j] != '' && this._g_aProductInfo[i].cartid == aCartSrl[j])
 				{
 					aCartToRemove.push(this._g_aProductInfo[i]);
-					nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;// * -1;
-					// _sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_oProductInfo[i].id + '_' + this._g_oProductInfo[i].name, nTotalPrice );
+					// _sendGaEventWithoutInteraction('button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_aProductInfo[i].id + '_' + this._g_aProductInfo[i].name, nTotalPrice);
 					aCartSrl.shift();
 				}
 			}
 		}
-		if(!nTotalPrice)
-			return false;
-
-		if(_g_bGa4DatastreamIdLoaded)
+		var nTotalPrice = 0;
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			gtag("event", "remove_from_cart", {
-				currency: "KRW",
-				value: nTotalPrice,
-				items: aCartToRemove
-				});
-			console.log('event - remove_from_cart selected - GAv4')
-		}
-		if(_g_bUaPropertyLoaded)
-		{
+			var aProduct = [];
 			for(var i = 0; i < aCartToRemove.length; i++)
 			{
-				ga('ec:addProduct', { // Provide product details in an productFieldObject.
-					'id': aCartToRemove[i].item_id, // Product ID (string).
-					'name': aCartToRemove[i].item_name, // Product name (string).
-					'category': aCartToRemove[i].item_category, // Product category (string).
-					'brand': aCartToRemove[i].item_brand, // Product brand (string).
-					'variant': aCartToRemove[i].item_variant, // Product variant (string).
-					'price': aCartToRemove[i].price, // Product price (currency).
-					'quantity': aCartToRemove[i].quantity // Product quantity (number).
+				nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity // plus value
+				aProduct.push({
+					id: aCartToRemove[i].item_id,
+					name: aCartToRemove[i].item_name,
+					category: aCartToRemove[i].item_category,
+					brand: aCartToRemove[i].item_brand,
+					variant: aCartToRemove[i].item_variant,
+					price: aCartToRemove[i].price,
+					quantity: aCartToRemove[i].quantity
+					//dimension3: 'Ecommerce',
+					//metric5: 12,
+					//metric6: 1002
 				});
-				ga('ec:setAction', 'remove');
-				nTotalPrice = this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
-				_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + aCartToRemove[i].item_id + '_' + aCartToRemove[i].item_name, nTotalPrice );
 			}
-			console.log('event - remove_from_cart selected - UA')
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.remove',
+				sv_event_val: nTotalPrice,
+				ecommerce: {
+					remove: {
+						actionField: {
+							list: this._g_sOptionCartPage
+							},
+						products: aProduct
+					}
+				}
+			});
+		}
+		else  // GA direct Mode
+		{
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				for(var i = 0; i < aCartToRemove.length; i++)
+				{
+					nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity // plus value
+				}
+
+				gtag("event", "remove_from_cart", {
+					currency: "KRW",
+					value: nTotalPrice,
+					items: aCartToRemove
+					});
+				console.log('event - remove_from_cart selected - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				for(var i = 0; i < aCartToRemove.length; i++)
+				{
+					ga('ec:addProduct', { // Provide product details in an productFieldObject.
+						'id': aCartToRemove[i].item_id, // Product ID (string).
+						'name': aCartToRemove[i].item_name, // Product name (string).
+						'category': aCartToRemove[i].item_category, // Product category (string).
+						'brand': aCartToRemove[i].item_brand, // Product brand (string).
+						'variant': aCartToRemove[i].item_variant, // Product variant (string).
+						'price': aCartToRemove[i].price, // Product price (currency).
+						'quantity': aCartToRemove[i].quantity // Product quantity (number).
+					});
+					ga('ec:setAction', 'remove');
+					nTotalPrice = this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
+					_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + aCartToRemove[i].item_id + '_' + aCartToRemove[i].item_name, nTotalPrice );
+				}
+				console.log('event - remove_from_cart selected - UA')
+			}
 		}
 	},
 	_fbSendCheckoutInitiation : function() 
@@ -939,9 +1235,10 @@ var gaectkCart =
 
 var gaectkSettlement = 
 {
-	_g_aProductInfo : [],
-	_g_bFacebookConvLoaded : false,
-	
+	_g_aProductInfo: [],
+	_g_bFacebookConvLoaded: false,
+	_g_sOptionSettlementPage: 'order page',
+
 	init : function()
 	{
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
@@ -984,77 +1281,116 @@ var gaectkSettlement =
 	{
 		var nElement = this._g_aProductInfo.length;
 		var nTotalPrice = 0;
-		for(var i = 0; i < nElement; i++)
+		//if(!nTotalPrice)
+		//	return false;
+		
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;
-		}
-		if(!nTotalPrice)
-			return false;
-
-		if(_g_bGa4DatastreamIdLoaded)
-		{
-			gtag("event", "add_payment_info", {
-				currency: "KRW",
-				value: nTotalPrice,
-				// coupon: "SUMMER_FUN",
-				// payment_type: "Credit Card",
-				items: this._g_aProductInfo
-			});
-	
-			gtag("event", "add_shipping_info", {
-				currency: "KRW",
-				value: nTotalPrice,
-				// coupon: "SUMMER_FUN",
-				//shipping_tier: "Ground",
-				items: this._g_aProductInfo
-			});
-			console.log('event - add_payment_info add_shipping_info - GAv4')
-		}
-		if(_g_bUaPropertyLoaded)
-		{
-			var nElement = this._g_aProductInfo.length;
-			var nTotalPrice = 0;
+			var aProduct = [];
 			for(var i = 0; i < nElement; i++)
 			{
-				ga('ec:addProduct', { // Provide product details in an productFieldObject.
-					'id': this._g_aProductInfo[i].item_id, // Product ID (string).
-					'name': this._g_aProductInfo[i].item_name, // Product name (string).
-					'category': this._g_aProductInfo[i].item_category, // Product category (string).
-					'brand': this._g_aProductInfo[i].item_brand, // Product brand (string).
-					'variant': this._g_aProductInfo[i].item_variant, // Product variant (string).
-					'price': this._g_aProductInfo[i].price, // Product price (currency).
-					'quantity': this._g_aProductInfo[i].quantity // Product quantity (number).
+				nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity // plus value
+				aProduct.push({
+					id: this._g_aProductInfo[i].item_id,
+					name: this._g_aProductInfo[i].item_name,
+					category: this._g_aProductInfo[i].item_category,
+					brand: this._g_aProductInfo[i].item_brand,
+					variant: this._g_aProductInfo[i].item_variant,
+					price: this._g_aProductInfo[i].price,
+					quantity: this._g_aProductInfo[i].quantity
+					//dimension3: 'Ecommerce',
+					//metric5: 12,
+					//metric6: 1002
 				});
 			}
-		
-			if(nStepNumber === undefined)
-				nStepNumber = null;
-			else if(nStepNumber.length == 0)
-				nStepNumber = null;
 
-			if(sOption === undefined)
-				sOption = null;
-			else if(sOption.length == 0)
-				sOption = null;
-			
-			if(nStepNumber == null && sOption == null)
-			{
-				_sendCheckoutAction( 2, 'settlement start page' ); // 1, the first step already started from cart page
-				_sendGaEventWithoutInteraction( 'checkout', 'started', _g_sPrefixSettlement, nTotalPrice ); // Send data using an event after set ec-action
-				console.log('event - settlement start page - UA')
-			}
-			else if( nStepNumber != null && sOption == null )
-				_sendCheckoutAction( nStepNumber ); 
-			else if( nStepNumber != null && sOption != null )
-				_sendCheckoutAction( nStepNumber, sOption );
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.checkout',
+				sv_event_lbl: _g_sPrefixSettlement + ' option - ' + this._g_sOptionSettlementPage,
+				sv_event_val: nTotalPrice,
+				ecommerce: {
+					checkout: {
+						actionField: {
+							step: 2,
+							option: this._g_sOptionSettlementPage
+						},
+						products: aProduct
+					}
+				}
+			});
 		}
+		else  // GA direct Mode
+		{
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				for(var i = 0; i < nElement; i++)
+				{
+					nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;
+				}
+				gtag("event", "add_payment_info", {
+					currency: "KRW",
+					value: nTotalPrice,
+					// coupon: "SUMMER_FUN",
+					// payment_type: "Credit Card",
+					items: this._g_aProductInfo
+				});
+		
+				gtag("event", "add_shipping_info", {
+					currency: "KRW",
+					value: nTotalPrice,
+					// coupon: "SUMMER_FUN",
+					//shipping_tier: "Ground",
+					items: this._g_aProductInfo
+				});
+				console.log('event - add_payment_info add_shipping_info - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				var nElement = this._g_aProductInfo.length;
+				//var nTotalPrice = 0;
+				for(var i = 0; i < nElement; i++)
+				{
+					nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;
+					ga('ec:addProduct', { // Provide product details in an productFieldObject.
+						'id': this._g_aProductInfo[i].item_id, // Product ID (string).
+						'name': this._g_aProductInfo[i].item_name, // Product name (string).
+						'category': this._g_aProductInfo[i].item_category, // Product category (string).
+						'brand': this._g_aProductInfo[i].item_brand, // Product brand (string).
+						'variant': this._g_aProductInfo[i].item_variant, // Product variant (string).
+						'price': this._g_aProductInfo[i].price, // Product price (currency).
+						'quantity': this._g_aProductInfo[i].quantity // Product quantity (number).
+					});
+				}
+			
+				if(nStepNumber === undefined)
+					nStepNumber = null;
+				else if(nStepNumber.length == 0)
+					nStepNumber = null;
 
-		if( nStepNumber == null && sOption == null )
+				if(sOption === undefined)
+					sOption = null;
+				else if(sOption.length == 0)
+					sOption = null;
+				
+				if(nStepNumber == null && sOption == null)
+				{
+					_sendCheckoutAction(2, this._g_sOptionSettlementPage); // 1, the first step already started from cart page
+					_sendGaEventWithoutInteraction('EEC', 'Checkout Step 2', _g_sPrefixSettlement + ' option - ' + this._g_sOptionSettlementPage, nTotalPrice); // Send data using an event after set ec-action
+					console.log('event - settlement start page - UA')
+				}
+				else if(nStepNumber != null && sOption == null)
+					_sendCheckoutAction(nStepNumber);
+				else if(nStepNumber != null && sOption != null)
+					_sendCheckoutAction(nStepNumber, sOption);
+			}
+		}
+		if(nStepNumber == null && sOption == null)
 		{
 			// https://github.com/douglascrockford/JSON-js
 			var sJsonSettlementInfo = JSON.stringify(this._g_aProductInfo);
 			var sEncrypted = CryptoJS.AES.encrypt(sJsonSettlementInfo, _g_sSecretPassphrase);
-			_setCookie('svgaectk', sEncrypted, 2);
+			_setCookie('svgaectk', sEncrypted, 2);  // expire in 2 hrs
 		}
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendPaymentInfoAddition();
@@ -1091,7 +1427,7 @@ var gaectkPurchase =
 									item_name: sItemName,
 									affiliation: _g_sAffiliation,
 									coupon: sCoupon,
-									currency: "KRW",
+									currency: 'KRW',
 									//discount: 2.22,
 									//index: 5,
 									item_brand: sBrand,
@@ -1115,7 +1451,6 @@ var gaectkPurchase =
 		nRevenue = _enforceInt(nRevenue);
 		nShippingCost = _enforceInt(nShippingCost);
 		var nTaxAmnt = nRevenue * 0.1;
-		var oProductInfo;
 		var nElement = this._g_aProductInfo.length;
 		if(nElement > 0) // gaectkPurchase.queueItemInfo()가 실행되었으면
 			aProductInfo = this._g_aProductInfo;
@@ -1136,46 +1471,87 @@ var gaectkPurchase =
 		if(!nElement) 
 			return false;
 		
-		if(_g_bGa4DatastreamIdLoaded)
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			gtag("event", "purchase", {  // GA v4는 items Array없이 purchase event 전송 불가능
-				currency: "KRW",
-				transaction_id: nOrderSrl,
-				value: nRevenue,
-				affiliation: _g_sAffiliation,
-				coupon: sCoupon,
-				shipping: nShippingCost,
-				tax: nTaxAmnt,
-				items: aProductInfo
-				});
-			console.log('event - purchase - GAv4')
-		}
-		if(_g_bUaPropertyLoaded)
-		{
-			for( var i = 0; i < nElement; i++ )
+			var aProduct = [];
+			for(var i = 0; i < nElement; i++)
 			{
-				ga('ec:addProduct', { // Provide product details in an productFieldObject.
-					'id': aProductInfo[i].item_id, // Product ID (string).
-					'name': aProductInfo[i].item_name, // Product name (string).
-					'category': aProductInfo[i].item_category, // Product category (string).
-					'brand': aProductInfo[i].item_brand, // Product brand (string).
-					'variant': aProductInfo[i].item_variant, // Product variant (string).
-					'price': aProductInfo[i].price, // Product price (currency).
-					'quantity': aProductInfo[i].quantity, // Product quantity (number).
-					'coupon': sCoupon  // Product coupon (string).
+				aProduct.push({
+					id: this._g_aProductInfo[i].item_id,
+					name: this._g_aProductInfo[i].item_name,
+					category: this._g_aProductInfo[i].item_category,
+					brand: this._g_aProductInfo[i].item_brand,
+					variant: this._g_aProductInfo[i].item_variant,
+					price: this._g_aProductInfo[i].price,
+					quantity: this._g_aProductInfo[i].quantity
+					//dimension3: 'Ecommerce',
+					//metric5: 12,
+					//metric6: 1002
 				});
-				// purchase action should be sent for every single item
-				ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
-					'id': nOrderSrl,             // (Required) Transaction id (string).
-					'affiliation': sAffiliation, // Affiliation (string).
-					'revenue': nRevenue,         // Revenue (currency).
-					'tax': nTaxAmnt,             // Tax (currency).
-					'shipping': nShippingCost,   // Shipping (currency).
-					'coupon': sCoupon            // Transaction coupon (string).
-				});
-				_sendGaEventWithoutInteraction( 'checkout', 'purchased', _g_sPrefixPurchased + '_' + aProductInfo[i].item_id + '_' + aProductInfo[i].item_name, aProductInfo[i].price * aProductInfo[i].quantity );
 			}
-			console.log('event - purchase - UA')
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.purchase',
+				ecommerce: {
+					currencyCode: 'KRW',
+					purchase: {
+						actionField: {
+							id: nOrderSrl,
+							affiliation: _g_sAffiliation,
+							revenue: nRevenue,
+							tax: nTaxAmnt,
+							shipping: nShippingCost,
+							coupon: sCoupon
+						},
+						products: aProduct
+					}
+				}
+			});
+		}
+		else  // GA direct Mode
+		{
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				gtag('event', 'purchase', {  // GA v4는 items Array없이 purchase event 전송 불가능
+					currency: 'KRW',
+					transaction_id: nOrderSrl,
+					value: nRevenue,
+					affiliation: _g_sAffiliation,
+					coupon: sCoupon,
+					shipping: nShippingCost,
+					tax: nTaxAmnt,
+					items: aProductInfo
+					});
+				console.log('event - purchase - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				for(var i = 0; i < nElement; i++)
+				{
+					ga('ec:addProduct', { // Provide product details in an productFieldObject.
+						'id': aProductInfo[i].item_id, // Product ID (string).
+						'name': aProductInfo[i].item_name, // Product name (string).
+						'category': aProductInfo[i].item_category, // Product category (string).
+						'brand': aProductInfo[i].item_brand, // Product brand (string).
+						'variant': aProductInfo[i].item_variant, // Product variant (string).
+						'price': aProductInfo[i].price, // Product price (currency).
+						'quantity': aProductInfo[i].quantity, // Product quantity (number).
+						'coupon': sCoupon  // Product coupon (string).
+					});
+					// purchase action should be sent for every single item
+					ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
+						'id': nOrderSrl,             // (Required) Transaction id (string).
+						'affiliation': sAffiliation, // Affiliation (string).
+						'revenue': nRevenue,         // Revenue (currency).
+						'tax': nTaxAmnt,             // Tax (currency).
+						'shipping': nShippingCost,   // Shipping (currency).
+						'coupon': sCoupon            // Transaction coupon (string).
+					});
+					//_sendGaEventWithoutInteraction('EEC', 'Purchase', _g_sPrefixPurchased + '_' + aProductInfo[i].item_id + '_' + aProductInfo[i].item_name, aProductInfo[i].price * aProductInfo[i].quantity);
+				}
+				_sendGaEventWithoutInteraction('EEC', 'Purchase', 'Order ID:'+nOrderSrl, nRevenue);
+				console.log('event - purchase - UA')
+			}
 		}
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendPurchaseComplete(nRevenue);
@@ -1234,42 +1610,75 @@ var gaectkMypage =
 	{
 		// Refund an entire transaction.
 		var nRefundedAmnt = 0;
-		for(var i = 0; i < this._g_aProductInfo.length; i++)
+		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
 		{
-			nRefundedAmnt += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;// * -1;
-		}
-		if(!nRefundedAmnt)
-			return false;
-
-		if(_g_bGa4DatastreamIdLoaded)
-		{
-			gtag("event", "refund", {
-				currency: "KRW",
-				transaction_id: nOrderSrl,
-				value: nRefundedAmnt,
-				affiliation: _g_sAffiliation,
-				//coupon: "SUMMER_FUN",
-				//shipping: 3.33,
-				//tax: 1.11,
-				items: this._g_aProductInfo
-			  });
-			console.log('event - refund - GAv4')
-		}
-		if(_g_bUaPropertyLoaded)
-		{
-			for( var i = 0; i < this._g_aProductInfo.length; i++ )
+			var aProduct = [];
+			for(var i = 0; i < this._g_aProductInfo.length; i++)
 			{
-				// Refund a single product.
-				ga('ec:addProduct', {
-				'id': this._g_aProductInfo[i].id, // Product ID is required for partial refund.
-				'quantity': this._g_aProductInfo[i].quantity // Quantity is required for partial refund.
+				nRefundedAmnt += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;// * -1;
+				aProduct.push({
+					id: this._g_aProductInfo[i].item_id,
+					quantity: this._g_aProductInfo[i].quantity
+					//dimension3: 'Ecommerce',
+					//metric5: 12,
+					//metric6: 1002
 				});
-				nRefundedAmnt = this._g_oProductInfo[i].price * this._g_oProductInfo[i].quantity * -1;
-				_sendGaEventWithoutInteraction( 'checkout', 'refunded', _g_sPrefixRefunded + '_' + this._g_aProductInfo[i].item_id + '_' + this._g_aProductInfo[i].item_name, nRefundedAmnt );
 			}
-			ga('ec:setAction', 'refund', {
-				'id': nOrderSrl    // Transaction ID is only required field for full refund.
+			if(!nRefundedAmnt)
+				return false;
+
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({
+				event: 'eec.refund',
+				ecommerce: {
+				refund: {
+					actionField: {
+						id: nOrderSrl
+						}
+					}, 
+					products: aProduct
+				}
 			});
+		}
+		else  // GA direct Mode
+		{
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				for(var i = 0; i < this._g_aProductInfo.length; i++)
+				{
+					nRefundedAmnt += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;// * -1;
+				}
+				if(!nRefundedAmnt)
+					return false;
+
+				gtag("event", "refund", {
+					currency: "KRW",
+					transaction_id: nOrderSrl,
+					value: nRefundedAmnt,
+					affiliation: _g_sAffiliation,
+					//coupon: "SUMMER_FUN",
+					//shipping: 3.33,
+					//tax: 1.11,
+					items: this._g_aProductInfo
+				  });
+				console.log('event - refund - GAv4')
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				for( var i = 0; i < this._g_aProductInfo.length; i++ )
+				{
+					// Refund a single product.
+					ga('ec:addProduct', {
+					'id': this._g_aProductInfo[i].id, // Product ID is required for partial refund.
+					'quantity': this._g_aProductInfo[i].quantity // Quantity is required for partial refund.
+					});
+					nRefundedAmnt = this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
+					_sendGaEventWithoutInteraction('checkout', 'refunded', _g_sPrefixRefunded + '_' + this._g_aProductInfo[i].item_id + '_' + this._g_aProductInfo[i].item_name, nRefundedAmnt);
+				}
+				ga('ec:setAction', 'refund', {
+					'id': nOrderSrl    // Transaction ID is only required field for full refund.
+				});
+			}
 		}
 	}
 }

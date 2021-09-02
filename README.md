@@ -1,13 +1,14 @@
-Enhanced Ecommerce JS Snippet Code for Google Analytics v3 and v4
+Enhance Ecommerce JavaScript Snippet Library for Universal Analytics, Google Analytics v4 with Google Tag Manager
 ============
 
 [![License](http://img.shields.io/badge/license-GNU%20LGPL-brightgreen.svg)](http://www.gnu.org/licenses/gpl.html)
 [![Latest release](https://img.shields.io/github/v/release/singleview-co-kr/gaectk.svg)](https://github.com/singleview-co-kr/gaectk/releases)
 
-Enhanced Ecommerce JS Snippet Code for Google Analytics v3 and v4(gaectk)는 Google Analytics for web이 제공하는 복잡한 JS snippet code 규칙을 몰라도 쉽고 정확하게 사용할 수 있도록 Google Analytics v3 and v4 for web의 전자상거래 관련 이벤트를 전송하는 snippet code를 라이브러리화했습니다.
+Enhance Ecommerce JavaScript Snippet Library for Universal Analytics, Google Analytics v4 with Google Tag Manager(gaectk)는 Google Analytics for web이 제공하는 복잡한 JS snippet code 규칙과 Google Tag Manager 사용법을 전문가 수준으로 이해하지 않아도 쉽고 정확하게 사용할 수 있도록 Google Analytics v3 and v4 for web의 전자상거래 관련 이벤트를 전송하는 snippet code를 라이브러리화했습니다.
+
 오픈소스 라이선스로 누구나 사용 또는 개작할 수 있으며, 개방형 프로젝트로서 누구나 개발에 참여할 수 있습니다. 
 
-본 프로젝트의 목표는 Google Analytics for web과 관련된 시장의 낙후된 구조를 개선하는 것입니다.
+본 프로젝트의 목표는 Google Analytics for web을 실무에 도입하려는 분들의 업무 부담과 초기 위험을 완화하는 것입니다.
 
 노련한 개발과 온라인 마케팅 자원이 없는 조직이 Google Analytics for web을 사용하여 정량적 온라인 마케팅을 시작하면 처음 부딪히는 난관이 자사의 쇼핑몰 사이트에 Enhanced Ecommerce Snippet Code를 설치하는 것입니다.
 
