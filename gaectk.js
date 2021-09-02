@@ -6,8 +6,8 @@
 // refers to https://ga-dev-tools.web.app/ga4/dimensions-metrics-explorer/
 // refers to https://www.simoahava.com/analytics/enhanced-ecommerce-guide-for-google-tag-manager/
 // refers to https://www.simoahava.com/analytics/ecommerce-tips-google-tag-manager/
-var _g_sGaectkVersion = '1.2.0';
-var _g_sGaectkVersionDate = '2021-09-02';
+var _g_sGaectkVersion = '1.2.1';
+var _g_sGaectkVersionDate = '2021-09-03';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -399,9 +399,10 @@ var gaectkList =
 	_g_nListPosition: 1,
 	_g_sListTitle: 'undefined',
 	_g_aProductInfo: [],
-
-	init : function(sListTitle, nCurrentPage, nItemsPerPage)  // sListTitle will be deprecated
+	
+	init : function(nCurrentPage, nItemsPerPage)
 	{
+		console.log(nCurrentPage);
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
 		{
 			_g_bEcRequired = true;
@@ -672,7 +673,7 @@ var gaectkDetail =
 			this._fbSendViewContent();
 		return true;
 	},
-	patchBuyImmediately : function(nTotalQuantity)
+	patchBuyNow : function(nTotalQuantity)
 	{
 		var nTotalQuantity = _enforceInt(nTotalQuantity);
 		var nTotalPrice = nTotalQuantity * this._g_aProductInfo[0].price;
