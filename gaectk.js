@@ -6,8 +6,8 @@
 // refers to https://ga-dev-tools.web.app/ga4/dimensions-metrics-explorer/
 // refers to https://www.simoahava.com/analytics/enhanced-ecommerce-guide-for-google-tag-manager/
 // refers to https://www.simoahava.com/analytics/ecommerce-tips-google-tag-manager/
-var _g_sGaectkVersion = '1.2.1';
-var _g_sGaectkVersionDate = '2021-09-03';
+var _g_sGaectkVersion = '1.2.2';
+var _g_sGaectkVersionDate = '2021-09-04';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -842,6 +842,7 @@ var gaectkCart =
 	},
 	viewCart : function()  // this method is for GAv4 only
 	{
+		console.log(this._g_aProductInfo);
 		if(!_g_bGa4DatastreamIdLoaded)
 			return false;
 		var nElement = this._g_aProductInfo.length;
@@ -886,12 +887,12 @@ var gaectkCart =
 		var aCartToCheckout = [];
 		var nStackedCartElement = this._g_aProductInfo.length;
 		var nSelectedCartElement = 0;
-		for( var i = 0; i < nStackedCartElement; i++ )
+		for(var i = 0; i < nStackedCartElement; i++)
 		{
 			nSelectedCartElement = aCartSrl.length;
-			for( var j = 0; j < nSelectedCartElement; j++ )
+			for(var j = 0; j < nSelectedCartElement; j++)
 			{
-				if( aCartSrl[j] != '' && this._g_aProductInfo[i].cartid == aCartSrl[j] )
+				if(this._g_aProductInfo[i].cartid == aCartSrl[j])
 				{
 					aCartToCheckout.push(this._g_aProductInfo[i]);
 					//_sendGaEventWithoutInteraction('checkout', 'started', _g_sPrefixCheckoutSelected + '_' + this._g_aProductInfo[i].id+'_' + this._g_aProductInfo[i].name, this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity);
@@ -1040,7 +1041,7 @@ var gaectkCart =
 						'quantity': this._g_aProductInfo[i].quantity // Product quantity (number).
 					});
 				}
-				_sendCheckoutAction(1, thi._g_sOptionCartPage);
+				_sendCheckoutAction(1, this._g_sOptionCartPage);
 				_sendGaEventWithoutInteraction('checkout', 'started', _g_sPrefixCheckoutAll, nTotalPrice); // Send data using an event after set ec-action
 				console.log('event - begin_checkout all - UA')
 			}
@@ -1124,7 +1125,7 @@ var gaectkCart =
 			}
 		}
 	},
-	removeFromCart : function(aTmpCartSrl)
+	removeSelected : function(aTmpCartSrl)
 	{
 		var aCartSrl = [];
 		if(aTmpCartSrl instanceof Array) 
@@ -1149,13 +1150,18 @@ var gaectkCart =
 			nSelectedCartElement = aCartSrl.length;
 			for(var j = 0; j < nSelectedCartElement; j++)
 			{
-				if(aCartSrl[j] != '' && this._g_aProductInfo[i].cartid == aCartSrl[j])
+				if(this._g_aProductInfo[i].cartid == aCartSrl[j])
 				{
 					aCartToRemove.push(this._g_aProductInfo[i]);
 					// _sendGaEventWithoutInteraction('button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_aProductInfo[i].id + '_' + this._g_aProductInfo[i].name, nTotalPrice);
 					aCartSrl.shift();
 				}
 			}
+		}
+		if(aCartToRemove.length == 0)
+		{
+			console.log('nothing to remove from cart');
+			return;
 		}
 		var nTotalPrice = 0;
 		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
@@ -1199,7 +1205,6 @@ var gaectkCart =
 				{
 					nTotalPrice += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity // plus value
 				}
-
 				gtag("event", "remove_from_cart", {
 					currency: "KRW",
 					value: nTotalPrice,
