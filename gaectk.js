@@ -6,8 +6,8 @@
 // refers to https://ga-dev-tools.web.app/ga4/dimensions-metrics-explorer/
 // refers to https://www.simoahava.com/analytics/enhanced-ecommerce-guide-for-google-tag-manager/
 // refers to https://www.simoahava.com/analytics/ecommerce-tips-google-tag-manager/
-var _g_sGaectkVersion = '1.2.3';
-var _g_sGaectkVersionDate = '2021-09-05';
+var _g_sGaectkVersion = '1.2.4';
+var _g_sGaectkVersionDate = '2021-09-10';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -442,7 +442,7 @@ var gaectkList =
 		this._g_sListTitle = _parseUrl('pathname');  // replace with GTM default variable Page Path?
 		return true;
 	},
-	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant)
+	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice)
 	{
 		// UA would be deprecated someday hence this construction is GAv4 biased
 		this._g_aProductInfo.push({ item_id: nItemSrl,
@@ -462,7 +462,7 @@ var gaectkList =
 									item_list_name: this._g_sListTitle,
 									item_variant: sVariant,
 									//location_id: "L_12345",
-									//price: Number(9.99),
+									price: _enforceInt(nItemPrice)
 									//quantity: Number(1)
 								 });
 	},
@@ -485,7 +485,8 @@ var gaectkList =
 					brand: this._g_aProductInfo[i].item_brand, 
 					variant: this._g_aProductInfo[i].item_variant,
 					list: this._g_sListTitle,
-					position: this._g_aProductInfo[i].index
+					position: this._g_aProductInfo[i].index,
+					price: this._g_aProductInfo[i].price
 				});
 			}
 			window.dataLayer = window.dataLayer || [];
@@ -525,7 +526,8 @@ var gaectkList =
 						'brand': this._g_aProductInfo[i].item_brand, // Product brand (string).
 						'variant': this._g_aProductInfo[i].item_variant, // Product variant (string).
 						'list': this._g_sListTitle,
-						'position': this._g_aProductInfo[i].index // 'position' indicates the product position in the list.
+						'position': this._g_aProductInfo[i].index, // 'position' indicates the product position in the list.
+						'price': this._g_aProductInfo[i].price
 					});
 					if(i > 0 && i % nItemChunk == 0)
 						_sendGaEventWithoutInteraction( 'eec', 'send', 'eec_addImp', 0 );
@@ -568,7 +570,8 @@ var gaectkList =
 							category: aSingleItemClicked[0].item_category,
 							brand: aSingleItemClicked[0].item_brand,
 							variant: aSingleItemClicked[0].item_variant,
-							position: aSingleItemClicked[0].index
+							position: aSingleItemClicked[0].index,
+							price: aSingleItemClicked[0].price
 							// dimension3: '1500 pages'
 						}]
 					}
@@ -595,7 +598,8 @@ var gaectkList =
 					'brand': aSingleItemClicked[0].item_brand, // Product brand (string).
 					'variant': aSingleItemClicked[0].item_variant, // Product variant (string).
 					'list': this._g_sListTitle,
-					'position': aSingleItemClicked[0].index // 'position' indicates the product position in the list.
+					'position': aSingleItemClicked[0].index, // 'position' indicates the product position in the list.
+					'price': aSingleItemClicked[0].price
 				});
 				ga('ec:setAction', 'click', { list: this._g_sListTitle } );
 				_sendGaEventWithoutInteraction( 'button', 'clicked', sEventLbl);
@@ -764,7 +768,7 @@ var gaectkDetail =
 							category: this._g_aProductInfo[0].item_category,
 							brand: this._g_aProductInfo[0].item_brand,
 							variant: this._g_aProductInfo[0].item_variant,
-							price: nTotalPrice,
+							price: this._g_aProductInfo[0].price,
 							quantity: nTotalQuantity
 							//dimension3: 'Ecommerce',
 							//metric5: 12,
@@ -794,7 +798,7 @@ var gaectkDetail =
 					'category': this._g_aProductInfo[0].item_category, // Product category (string).
 					'brand': this._g_aProductInfo[0].item_brand, // Product brand (string).
 					'variant': this._g_aProductInfo[0].item_variant, // Product variant (string).
-					'price': nTotalPrice,
+					'price': this._g_aProductInfo[0].price,
 					'quantity': nTotalQuantity
 				});
 				ga('ec:setAction', 'add');
@@ -878,7 +882,6 @@ var gaectkCart =
 	},
 	viewCart : function()  // this method is for GAv4 only
 	{
-		console.log(this._g_aProductInfo);
 		if(!_g_bGa4DatastreamIdLoaded)
 			return false;
 		var nElement = this._g_aProductInfo.length;

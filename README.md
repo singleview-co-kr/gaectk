@@ -1,4 +1,4 @@
-Enhance Ecommerce JavaScript Snippet Library for Universal Analytics, Google Analytics v4 with Google Tag Manager
+Enhance Ecommerce JavaScript Snippet Library for Universal Analytics, Google Analytics 4 with Google Tag Manager
 ============
 
 [![License](http://img.shields.io/badge/license-GNU%20LGPL-brightgreen.svg)](http://www.gnu.org/licenses/gpl.html)
