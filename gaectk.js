@@ -6,8 +6,8 @@
 // refers to https://ga-dev-tools.web.app/ga4/dimensions-metrics-explorer/
 // refers to https://www.simoahava.com/analytics/enhanced-ecommerce-guide-for-google-tag-manager/
 // refers to https://www.simoahava.com/analytics/ecommerce-tips-google-tag-manager/
-var _g_sGaectkVersion = '1.2.4';
-var _g_sGaectkVersionDate = '2021-09-10';
+var _g_sGaectkVersion = '1.2.5';
+var _g_sGaectkVersionDate = '2021-09-11';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -517,7 +517,8 @@ var gaectkList =
 					nItemChunk = 30;
 				if(nItemChunk == 0)
 					nItemChunk = 30;
-				for(var i = 0; i < this._g_aProductInfo.length; i++)
+				var nLength = this._g_aProductInfo.length;
+				for(var i = 0; i < nLength; i++)
 				{
 					ga('ec:addImpression', {
 						'id': this._g_aProductInfo[i].item_id, // Product ID (string).
@@ -1158,8 +1159,8 @@ var gaectkCart =
 					});
 					ga('ec:setAction', 'remove');
 					nTotalPrice = this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
-					_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_aProductInfo[i].item_id + '_' + this._g_aProductInfo[i].item_name, nTotalPrice ); // Send data using an event after set ec-action
 				}
+				_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_items_' + String(nElement), nTotalPrice ); // Send data using an event after set ec-action
 				console.log('event - remove_from_cart all - UA')
 			}
 		}
@@ -1192,7 +1193,6 @@ var gaectkCart =
 				if(this._g_aProductInfo[i].cartid == aCartSrl[j])
 				{
 					aCartToRemove.push(this._g_aProductInfo[i]);
-					// _sendGaEventWithoutInteraction('button', 'clicked', _g_sPrefixRemoveFromCart + '_' + this._g_aProductInfo[i].id + '_' + this._g_aProductInfo[i].name, nTotalPrice);
 					aCartSrl.shift();
 				}
 			}
@@ -1265,9 +1265,9 @@ var gaectkCart =
 						'quantity': aCartToRemove[i].quantity // Product quantity (number).
 					});
 					ga('ec:setAction', 'remove');
-					nTotalPrice = this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
-					_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_' + aCartToRemove[i].item_id + '_' + aCartToRemove[i].item_name, nTotalPrice );
+					nTotalPrice -= this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
 				}
+				_sendGaEventWithoutInteraction( 'button', 'clicked', _g_sPrefixRemoveFromCart + '_items_' + String(nElement), nTotalPrice ); // Send data using an event after set ec-action
 				console.log('event - remove_from_cart selected - UA')
 			}
 		}
@@ -1420,21 +1420,20 @@ var gaectkSettlement =
 				if(nStepNumber == null && sOption == null)
 				{
 					_sendCheckoutAction(2, this._g_sOptionSettlementPage); // 1, the first step already started from cart page
-					_sendGaEventWithoutInteraction('EEC', 'Checkout Step 2', _g_sPrefixSettlement + ' option - ' + this._g_sOptionSettlementPage, nTotalPrice); // Send data using an event after set ec-action
 					console.log('event - settlement start page - UA')
+					// https://github.com/douglascrockford/JSON-js
+					var sJsonSettlementInfo = JSON.stringify(this._g_aProductInfo);
+					var sEncrypted = CryptoJS.AES.encrypt(sJsonSettlementInfo, _g_sSecretPassphrase);
+					_setCookie('svgaectk', sEncrypted, 2);  // expire in 2 hrs
+					nStepNumber = 2;
 				}
 				else if(nStepNumber != null && sOption == null)
 					_sendCheckoutAction(nStepNumber);
 				else if(nStepNumber != null && sOption != null)
 					_sendCheckoutAction(nStepNumber, sOption);
+
+				_sendGaEventWithoutInteraction('EEC', 'Checkout Step '+String(nStepNumber), _g_sPrefixSettlement + '_option_' + this._g_sOptionSettlementPage, nTotalPrice); // Send data using an event after set ec-action
 			}
-		}
-		if(nStepNumber == null && sOption == null)
-		{
-			// https://github.com/douglascrockford/JSON-js
-			var sJsonSettlementInfo = JSON.stringify(this._g_aProductInfo);
-			var sEncrypted = CryptoJS.AES.encrypt(sJsonSettlementInfo, _g_sSecretPassphrase);
-			_setCookie('svgaectk', sEncrypted, 2);  // expire in 2 hrs
 		}
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendPaymentInfoAddition();
@@ -1659,7 +1658,7 @@ var gaectkMypage =
 			var aProduct = [];
 			for(var i = 0; i < this._g_aProductInfo.length; i++)
 			{
-				nRefundedAmnt += this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;// * -1;
+				nRefundedAmnt -= this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;// * -1;
 				aProduct.push({
 					id: this._g_aProductInfo[i].item_id,
 					quantity: this._g_aProductInfo[i].quantity
@@ -1709,19 +1708,20 @@ var gaectkMypage =
 			}
 			if(_g_bUaPropertyLoaded)  // UA
 			{
-				for( var i = 0; i < this._g_aProductInfo.length; i++ )
+				var nLength = this._g_aProductInfo.length;
+				for(var i = 0; i < nLength; i++)
 				{
 					// Refund a single product.
 					ga('ec:addProduct', {
 					'id': this._g_aProductInfo[i].id, // Product ID is required for partial refund.
 					'quantity': this._g_aProductInfo[i].quantity // Quantity is required for partial refund.
 					});
-					nRefundedAmnt = this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity * -1;
-					_sendGaEventWithoutInteraction('checkout', 'refunded', _g_sPrefixRefunded + '_' + this._g_aProductInfo[i].item_id + '_' + this._g_aProductInfo[i].item_name, nRefundedAmnt);
+					nRefundedAmnt -= this._g_aProductInfo[i].price * this._g_aProductInfo[i].quantity;
 				}
 				ga('ec:setAction', 'refund', {
 					'id': nOrderSrl    // Transaction ID is only required field for full refund.
 				});
+				_sendGaEventWithoutInteraction('checkout', 'refunded', _g_sPrefixRefunded + '_items_' + String(nLength), nRefundedAmnt);
 			}
 		}
 	}
