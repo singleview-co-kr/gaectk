@@ -1,5 +1,5 @@
 /*
- * Universal Analytics, Google Analytics v4 Enhance Ecommerce with Google Tag Manager JavaScript Library
+ * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
 // refers to https://developers.google.com/analytics/devguides/collection/analyticsjs/enhanced-ecommerce
@@ -8,8 +8,8 @@
 // refers to https://developers.google.com/tag-manager/enhanced-ecommerce
 // refers to https://www.simoahava.com/analytics/enhanced-ecommerce-guide-for-google-tag-manager/
 // refers to https://www.simoahava.com/analytics/ecommerce-tips-google-tag-manager/
-var _g_sGaectkVersion = '1.3.0';
-var _g_sGaectkVersionDate = '2021-09-16';
+var _g_sGaectkVersion = '1.3.1';
+var _g_sGaectkVersionDate = '2021-09-17';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -313,7 +313,8 @@ function _parseUrl(sElem)
 }
 
 var gaectkStorage = 
-{
+{  // https://michalzalecki.com/why-using-localStorage-directly-is-a-bad-idea/
+	// https://stackoverflow.com/questions/46833440/localstorage-is-null-in-chrome-mobile-android
 	saveData: function(sMethod, sKeyName, oKeyVal, nExpHrs)
 	{
 		switch(arguments.length)
@@ -1604,7 +1605,6 @@ var gaectkPurchase =
 			oTemp = gaectkStorage.loadData('cookie', _g_sSettledItemListCN);
 			if(oTemp == null)
 				return false;
-
 			nElement = oTemp.length;
 			if(nElement > 0)
 				aProductInfo = oTemp;
@@ -1627,8 +1627,7 @@ var gaectkPurchase =
 			oSingleProductUa.coupon = aProductInfo[i].coupon;
 			aProductToCheckoutUa.push(oSingleProductUa); // attrs should be id, name, category, brand, variant, price, quantity
 
-			nTotalPrice += oSingleProductGa4.price * this._g_aProductInfo[i].quantity;  // plus value
-			//console.log('price', oSingleProductGa4.price, 'quantity', this._g_aProductInfo[i].quantity);
+			nTotalPrice += oSingleProductGa4.price * aProductInfo[i].quantity;  // plus value
 		}
 		if(!nTotalPrice)
 			return false;
