@@ -8,8 +8,8 @@
 // refers to https://developers.google.com/tag-manager/enhanced-ecommerce
 // refers to https://www.simoahava.com/analytics/enhanced-ecommerce-guide-for-google-tag-manager/
 // refers to https://www.simoahava.com/analytics/ecommerce-tips-google-tag-manager/
-var _g_sGaectkVersion = '1.3.1';
-var _g_sGaectkVersionDate = '2021-09-17';
+var _g_sGaectkVersion = '1.3.2';
+var _g_sGaectkVersionDate = '2021-09-23';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -436,7 +436,7 @@ var gaectkItems =
 			}
 		}
 	},
-	register: function(nItemSrl, sItemName, nPosition, sBrand, sCategory, sVariant, sListName, nPrice, sCoupon=null)
+	register: function(nItemSrl, sItemName, nPosition, sBrand, sCategory, sVariant, sListName, nPrice, sCoupon)
 	{
 		sItemSrl = String(nItemSrl);
 		// UA would be deprecated someday hence this construction is GAv4 biased
@@ -657,7 +657,7 @@ var gaectkList =
 	},
 	queueItemInfo: function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nPrice)
 	{
-		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, this._g_sListTitle, _enforceInt(nPrice));
+		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, this._g_sListTitle, _enforceInt(nPrice), null);
 		this._g_aProductInfo.push({item_id: nItemSrl});  // this should be srl array
 	},
 	patchImpression : function(nItemChunk)
@@ -799,7 +799,7 @@ var gaectkDetail =
 	loadItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice)
 	{
 		this._g_aProductInfo.push({item_id: nItemSrl});
-		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice));
+		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null);
 		return true;
 	},
 	patchDetail : function()
@@ -1454,7 +1454,7 @@ var gaectkSettlement =
 	},
 	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity)
 	{
-		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice));
+		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null);
 		this._g_aProductInfo.push({item_id: nItemSrl, quantity: _enforceInt(nTotalQuantity)});
 		return true;
 	},
@@ -1718,7 +1718,7 @@ var gaectkMypage =
 	},
 	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity)
 	{
-		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice));
+		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null);
 		this._g_aProductInfo.push({ item_id: nItemSrl, quantity: _enforceInt(nTotalQuantity)});
 		return true;
 	},
