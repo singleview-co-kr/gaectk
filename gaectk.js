@@ -8,13 +8,16 @@
 // refers to https://developers.google.com/tag-manager/enhanced-ecommerce
 // refers to https://www.simoahava.com/analytics/enhanced-ecommerce-guide-for-google-tag-manager/
 // refers to https://www.simoahava.com/analytics/ecommerce-tips-google-tag-manager/
-var _g_sGaectkVersion = '1.3.2';
-var _g_sGaectkVersionDate = '2021-09-23';
+// refers to https://www.simoahava.com/analytics/google-analytics-4-ecommerce-guide-google-tag-manager/
+var _g_sGaectkVersion = '1.4.0';
+var _g_sGaectkVersionDate = '2021-09-27';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
 var _g_sGa4DatastreamId = null;
 var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
+var _g_bGtmUaActivated = false; // GTM trigger UA
+var _g_bGtmGa4Activated = false; // GTM trigger GA4
 var 
 	_g_sPrefixAddImpression = 'ai',
 	_g_sPrefixItemClicked = 'ic',
@@ -48,7 +51,6 @@ function setUtmParamsGaectk(sSource, sMedium, sCampaign, sKeyword, sContentVaria
 			sCampaign = '';
 		if(typeof sContentVariation === 'undefined' || sContentVariation === null || sContentVariation === undefined || sContentVariation.length == 0)
 			sContentVariation = '';
-
 		// https://stackoverflow.com/questions/50231721/how-to-track-utm-source-in-google-analytics-using-gtag
 		gtag('config', _g_sGa4DatastreamId, {
 			campaign: {
@@ -59,7 +61,6 @@ function setUtmParamsGaectk(sSource, sMedium, sCampaign, sKeyword, sContentVaria
 			}
 		});
 	}
-	
 	if(_g_bUaPropertyLoaded)
 	{
 		if(sSource != '')
@@ -102,11 +103,9 @@ function checkVisibilityGaectk(elm, eval)
 
 	if(eval == 'visible')
 	{
-		// mark an object is on viewport
-		if((y < (vpH + st)) && (y > (st - elementHeight)))
+		if((y < (vpH + st)) && (y > (st - elementHeight))) // mark an object is on viewport
 		{
 			var bChecked = false;
-			
 			if(_g_aImageElement.length > 0)
 			{
 				for(var i in _g_aImageElement)
@@ -118,7 +117,6 @@ function checkVisibilityGaectk(elm, eval)
 					}
 				}
 			}
-			
 			if(!bChecked)
 			{
 				_sendGaEventWithoutInteraction( 'banner', 'displayed', sCurObjId );
@@ -145,17 +143,15 @@ function sendClickEventGaectk(sCategory, sPageTitle, sLocation, sWindow)
 		return false;
 	if(sLocation === null || sLocation === undefined || sLocation.length == 0 || sLocation == '#')
 		sLocation = '#';
-
 	if(sWindow === null || sWindow === undefined || sWindow.length == 0)
 		sWindow = 'self';
-	
 	if(_g_bGa4DatastreamIdLoaded)
 	{
 		console.log('sendClickEventGaectk denied - use Automatic collected event and Create Event');
 	}
 	if(_g_bUaPropertyLoaded)
 	{
-		_sendGaEventWithInteraction( sCategory, 'clicked', sPageTitle );
+		_sendGaEventWithInteraction(sCategory, 'clicked', sPageTitle);
 	}
 	if(sLocation != '#')
 	{
@@ -163,7 +159,7 @@ function sendClickEventGaectk(sCategory, sPageTitle, sLocation, sWindow)
 			location.href = sLocation;
 		else
 		{
-			window.open( sLocation, sWindow );
+			window.open(sLocation, sWindow);
 			window.focus();
 		}
 	}
@@ -209,12 +205,11 @@ function _sendGaEventWithoutInteraction(sEventCategory, sEventAction, sEventLabe
 		console.log('_sendGaEventWithoutInteraction denied: sEventAction is required!'); 
 		return false;
 	}
-
-	if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 	{
 		;
 	}
-	else  // GA direct Mode
+	else  // JS API mode
 	{
 		if(_g_bGa4DatastreamIdLoaded)  // GAv4
 		{
@@ -310,6 +305,38 @@ function _parseUrl(sElem)
 	}
 	else
 		return 'undefined';
+}
+
+function _triggerDataLayer(sEventName, oEcommerceInfo, oSvEventInfo)
+{
+	if(sEventName == null || sEventName === undefined || sEventName.length == 0)
+	{
+		console.log('denied to trigger GTM dataLayer - invalid event name!');
+		return;
+	}
+	try
+	{
+		var sEventLbl = oSvEventInfo.sv_event_lbl;	
+	}
+	catch(e)
+	{
+		var sEventLbl = null;
+	}
+	try
+	{
+		var sEventVal = oSvEventInfo.sv_event_val;	
+	}
+	catch(e)
+	{
+		var sEventVal = null;
+	}
+	window.dataLayer.push({ecommerce: null}); // combination with GTM data layer version 2
+	window.dataLayer.push({
+		event: sEventName,
+		ecommerce: oEcommerceInfo,
+		sv_event_lbl: sEventLbl,
+		sv_event_val: sEventVal
+	});
 }
 
 var gaectkStorage = 
@@ -567,6 +594,16 @@ var gaectkHeader =
 					console.log('Warning! You requested GTM activation w/o proper initialization.');
 				}
 			}
+			if(sTrackingId == 'GTMUA') // string GTMUA
+			{
+				_g_bGtmUaActivated = true;
+				console.log('GTMUA activated')
+			}
+			if(sTrackingId == 'GTMGA4') // string GTMGA4
+			{
+				_g_bGtmGa4Activated = true;
+				console.log('GTMGA4 activated')
+			}
 			if(sTrackingId.search(/^UA-/gm) == 0) // string like 'UA-XXXXXX-xx'
 			{
 				if(typeof ga === 'function')
@@ -589,7 +626,7 @@ var gaectkHeader =
 				{
 					_g_bGa4DatastreamIdLoaded = true;
 					_g_sGa4DatastreamId = sTrackingId;
-					console.log('GAv4 activated');
+					console.log('GA4 activated');
 				}
 				else
 				{
@@ -610,7 +647,10 @@ var gaectkHeader =
 			_g_bGa4DatastreamIdLoaded = false;
 			return false;
 		}
-
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
+		{
+			window.dataLayer = window.dataLayer || [];
+		}
 		if(_g_bUaPropertyLoaded)
 		{
 			ga('create', sUaTrackingId, 'auto');
@@ -640,7 +680,6 @@ var gaectkList =
 	_g_nListPosition: 1,
 	_g_sListTitle: null,
 	_g_aProductInfo: [],
-	
 	init : function(nCurrentPage, nItemsPerPage)
 	{
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
@@ -667,27 +706,31 @@ var gaectkList =
 			console.log('no items on catalog');
 			return false;
 		}
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
 			var aProduct = [];
 			var nCnt = this._g_aProductInfo.length;
-			for(var i = 0; i < nCnt; i++)
+			if(_g_bGtmUaActivated) // GTM trigger UA
 			{
-				oSingleProduct = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-				aProduct.push(oSingleProduct); // attrs should be id, name, list, brand, category, variant, position, price
-			}
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.impressionView',
-				ecommerce: {
-					actionField: {list: this._g_sListTitle},
-					impressions: aProduct
+				for(var i = 0; i < nCnt; i++)
+				{
+					oSingleProduct = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
+					aProduct.push(oSingleProduct); // attrs should be id, name, list, brand, category, variant, position, price
 				}
-			});
+				_triggerDataLayer('eec.impressionView', {actionField: {list: this._g_sListTitle}, impressions: aProduct});
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				for(var i = 0; i < nCnt; i++)
+				{
+					oSingleProduct = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
+					aProduct.push(oSingleProduct); // attrs should be id, name, list, brand, category, variant, position, price
+				}
+				_triggerDataLayer('view_item_list', {items: aProduct});
+			}
 			delete aProduct;
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -733,29 +776,30 @@ var gaectkList =
 			return false;
 		}
 		oSingleProductGa4.quantity = 1;
-
 		oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', nItemSrl);
 		delete oSingleProductUa.list;
 		delete oSingleProductUa.price;
 		delete oSingleProductUa.quantity;
 
 		var sEventLbl = _g_sPrefixItemClicked + '_on_' + this._g_sListTitle +'_pos:' + oSingleProductGa4.index + '_' + oSingleProductGa4.item_id+'_'+oSingleProductGa4.item_name;
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.impressionClick',
-				sv_event_lbl: sEventLbl,
-				ecommerce: {
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.impressionClick', {
 					click: {
 						actionField: {list: this._g_sListTitle},
 						products: [oSingleProductUa]
-					}
-				}
-			});
+					}},
+					{sv_event_lbl: sEventLbl}
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('select_item', {items:[oSingleProductGa4]});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -784,7 +828,6 @@ var gaectkDetail =
 	_g_aProductInfo: [],
 	_g_sOptionDetailPage: 'detail page',
 	_g_bFacebookConvLoaded: false,
-
 	init : function()
 	{
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
@@ -806,7 +849,6 @@ var gaectkDetail =
 	{
 		oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[0].item_id);
 		oSingleProductGa4.quantity = 1;
-
 		var sListTitle = oSingleProductGa4.item_list_name;
 		var nItemPrice = oSingleProductGa4.price;
 
@@ -814,21 +856,18 @@ var gaectkDetail =
 		delete oSingleProductUa.list;
 		delete oSingleProductUa.position;
 		delete oSingleProductUa.price;
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.detail',
-				ecommerce: {
-					detail: {
-						actionField: {list: sListTitle},
-						products: [oSingleProductUa]
-					}
-				}
-			});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.detail', {detail: {actionField: {list: sListTitle}, products: [oSingleProductUa]}});
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('view_item', {items:[oSingleProductGa4]});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -870,34 +909,25 @@ var gaectkDetail =
 		delete oSingleProductUa.list;
 		delete oSingleProductUa.position;
 		oSingleProductUa.quantity = nTotalQuantity;
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.checkout',
-				sv_event_lbl: sEventLbl,
-				sv_event_val: nTotalPrice,
-				ecommerce: {
-					checkout: {
-						actionField: {
-							step: 1,
-							option: this._g_sOptionDetailPage
-						},
-						products: [oSingleProductUa]  // attrs should be id, name, category, brand, variant, price, quantity
-					}
-				}
-			});
-			//window.dataLayer = window.dataLayer || [];
-			//window.dataLayer.push({ecommerce: null});
-			//window.dataLayer.push({
-			//	event: 'eec.buyNow',
-			//	// ecommerce: null,
-			//	sv_event_lbl: sEventLbl,
-			//	sv_event_val: nTotalPrice
-			//});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.checkout', {
+						checkout: {
+							actionField: {step: 1, option: this._g_sOptionDetailPage},
+							products: [oSingleProductUa]  // attrs should be id, name, category, brand, variant, price, quantity
+						}
+					},
+					{sv_event_lbl: sEventLbl, sv_event_val: nTotalPrice}
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('begin_checkout', {items:[oSingleProductGa4]});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -905,7 +935,7 @@ var gaectkDetail =
 					currency: _g_sCurrency,
 					value: nTotalPrice,
 					//coupon: this._g_sCoupon,
-					items: [oSingleProductGa4]  //this._g_aProductInfo
+					items: [oSingleProductGa4]
 					});
 				console.log('event - begin_checkout selected - GAv4')
 				gtag('event', sEventLbl);
@@ -919,8 +949,6 @@ var gaectkDetail =
 				// Send data using an event.
 				_sendGaEventWithoutInteraction('EEC', 'checkout_step_1', _g_sPrefixBuyNow, nTotalPrice); // Send data using an event after set ec-action
 				console.log('event - begin_checkout selected - UA')
-				//_sendGaEventWithoutInteraction('EEC', 'buy_now', sEventLbl, nTotalPrice);
-				//console.log('event - buy now - UA')
 			}
 		}
 		delete oSingleProductGa4;
@@ -943,23 +971,25 @@ var gaectkDetail =
 		delete oSingleProductUa.list;
 		delete oSingleProductUa.position;
 
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.add',
-				sv_event_lbl: sEventLbl,
-				sv_event_val: nTotalPrice,
-				ecommerce: {
-					add: {
-						actionField: {list: sListTitle},
-						products: [oSingleProductUa]  // attrs should be id, name, category, brand, variant, price, quantity
-					}
-				}
-			});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.add', {
+						add: {
+							actionField: {list: sListTitle},
+							products: [oSingleProductUa]  // attrs should be id, name, category, brand, variant, price, quantity
+						}
+					},
+					{sv_event_lbl: sEventLbl, sv_event_val: nTotalPrice}
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('add_to_cart', {items:[oSingleProductGa4]});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -1019,7 +1049,6 @@ var gaectkCart =
 	_g_bFacebookConvLoaded: false,
 	_g_sOptionCartPage: 'cart page',
 	_g_sCoupon: false,
-
 	init : function()
 	{
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
@@ -1046,7 +1075,6 @@ var gaectkCart =
 		var nElement = this._g_aProductInfo.length;
 		if(nElement < 0)
 			return;
-		
 		var aCartItem = [];
 		var nTotalPrice = 0;
 		for(var i = 0; i < nElement; i++)
@@ -1060,17 +1088,18 @@ var gaectkCart =
 		if(!nTotalPrice)
 			return false;
 		var sEventLbl = _g_sPrefixViewCart + '_item_cnt_' + String(this._g_aProductInfo.length);
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.viewCart',
-				sv_event_lbl: sEventLbl,
-				sv_event_val: nTotalPrice
-			});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.viewCart', {}, {sv_event_lbl: sEventLbl, sv_event_val: nTotalPrice});
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('view_cart', {items:aCartItem});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -1107,7 +1136,6 @@ var gaectkCart =
 			var nTmpCartSrl = aTmpCartSrl;
 			aCartSrl.push(nTmpCartSrl);
 		}
-		
 		var nTotalPrice = 0;
 		var aCartToCheckoutGa4 = [];
 		var aCartToCheckoutUa = [];
@@ -1139,26 +1167,25 @@ var gaectkCart =
 		}
 		if(!nTotalPrice)
 			return false;
-		
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.checkout',
-				sv_event_val: nTotalPrice,
-				ecommerce: {
-					checkout: {
-						actionField: {
-							step: 1,
-							option: this._g_sOptionCartPage
-						},
-						products: aCartToCheckoutUa // attrs should be id, name, category, brand, variant, price, quantity
-					}
-				}
-			});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.checkout', {
+						checkout: {
+							actionField: {step: 1, option: this._g_sOptionCartPage},
+							products: aCartToCheckoutUa // attrs should be id, name, category, brand, variant, price, quantity
+						}
+					},
+					{sv_event_val: nTotalPrice}
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('begin_checkout', {items: aCartToCheckoutGa4});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -1215,26 +1242,25 @@ var gaectkCart =
 		if(!nTotalPrice)
 			return false;
 
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.checkout',
-				// sv_event_lbl: _g_sPrefixCheckoutSelected,
-				sv_event_val: nTotalPrice,
-				ecommerce: {
-					checkout: {
-						actionField: {
-							step: 1,
-							option: this._g_sOptionCartPage
-						},
-						products: aCartToCheckoutUa
-					}
-				}
-			});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.checkout', {
+						checkout: {
+							actionField: {step: 1, option: this._g_sOptionCartPage},
+							products: aCartToCheckoutUa // attrs should be id, name, category, brand, variant, price, quantity
+						}
+					},
+					{sv_event_val: nTotalPrice}
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('begin_checkout', {items: aCartToCheckoutGa4});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -1242,7 +1268,7 @@ var gaectkCart =
 					currency: _g_sCurrency,
 					value: nTotalPrice,
 					coupon: this._g_sCoupon,
-					items: aCartToCheckoutGa4  //this._g_aProductInfo
+					items: aCartToCheckoutGa4
 					});
 				console.log('event - begin_checkout all - GAv4')
 			}
@@ -1291,31 +1317,32 @@ var gaectkCart =
 		if(!nTotalPrice)
 			return false;
 
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.remove',
-				sv_event_val: nTotalPrice,
-				ecommerce: {
-					remove: {
-						actionField: {
-							list: this._g_sOptionCartPage
-							},
-						products: aCartToCheckoutUa
-					}
-				}
-			});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.remove', {
+						remove: {
+							actionField: {list: this._g_sOptionCartPage},
+							products: aCartToCheckoutUa
+						}
+					},
+					{sv_event_val: nTotalPrice}
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('remove_from_cart', {items:aCartToCheckoutGa4});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
 				gtag('event', 'remove_from_cart', {
 					currency: _g_sCurrency,
 					value: nTotalPrice,
-					items: aCartToCheckoutGa4  //this._g_aProductInfo
+					items: aCartToCheckoutGa4
 					});
 				console.log('event - remove_from_cart all - GAv4');
 			}
@@ -1385,24 +1412,25 @@ var gaectkCart =
 			console.log('nothing to remove from cart');
 			return false;
 		}
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.remove',
-				sv_event_val: nTotalPrice,
-				ecommerce: {
-					remove: {
-						actionField: {
-							list: this._g_sOptionCartPage
-							},
-						products: aCartToRemoveUa
-					}
-				}
-			});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.remove', {
+						remove: {
+							actionField: {list: this._g_sOptionCartPage},
+							products: aCartToRemoveUa
+						}
+					},
+					{sv_event_val: nTotalPrice}
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('remove_from_cart', {items:aCartToRemoveGa4});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -1439,7 +1467,6 @@ var gaectkSettlement =
 	_g_aProductInfo: [],
 	_g_bFacebookConvLoaded: false,
 	_g_sOptionSettlementPage: 'order page',
-
 	init : function()
 	{
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
@@ -1483,38 +1510,35 @@ var gaectkSettlement =
 		}
 		if(!nTotalPrice)
 			return false;
-
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.checkout',
-				sv_event_lbl: _g_sPrefixSettlement + '_option_' + this._g_sOptionSettlementPage,
-				sv_event_val: nTotalPrice,
-				ecommerce: {
-					checkout: {
-						actionField: {
-							step: 2, // 1, the first step already started from cart page
-							option: this._g_sOptionSettlementPage
-						},
-						products: aProductToCheckoutUa
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.checkout', {
+						checkout: {
+							actionField: {
+								step: 2, // 1, the first step already started from cart page
+								option: this._g_sOptionSettlementPage
+							},
+							products: aProductToCheckoutUa
+						}
+					},
+					{
+						sv_event_lbl: _g_sPrefixSettlement + '_option_' + this._g_sOptionSettlementPage, 
+						sv_event_val: nTotalPrice
 					}
-				}
-			});
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('add_shipping_info', {shipping_tier: 'Ground', items:aProductToCheckoutGa4});
+				_triggerDataLayer('add_payment_info', {payment_type: 'Internal PG', items:aProductToCheckoutGa4});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
-				gtag('event', 'add_payment_info', {
-					currency: _g_sCurrency,
-					value: nTotalPrice,
-					// coupon: 'SUMMER_FUN',
-					payment_type: 'Internal PG',
-					items: aProductToCheckoutGa4  // this._g_aProductInfo
-				});
-		
 				gtag('event', 'add_shipping_info', {
 					currency: _g_sCurrency,
 					value: nTotalPrice,
@@ -1522,7 +1546,14 @@ var gaectkSettlement =
 					shipping_tier: 'Ground',
 					items: aProductToCheckoutGa4  // this._g_aProductInfo
 				});
-				console.log('event - add_payment_info add_shipping_info - GAv4')
+				gtag('event', 'add_payment_info', {
+					currency: _g_sCurrency,
+					value: nTotalPrice,
+					// coupon: 'SUMMER_FUN',
+					payment_type: 'Internal PG',
+					items: aProductToCheckoutGa4  // this._g_aProductInfo
+				});
+				console.log('event - add_shipping_info add_payment_info - GAv4')
 			}
 			if(_g_bUaPropertyLoaded)  // UA
 			{
@@ -1530,7 +1561,6 @@ var gaectkSettlement =
 				{
 					ga('ec:addProduct', aProductToCheckoutUa[i]);
 				}
-			
 				if(nStepNumber === undefined)
 					nStepNumber = null;
 				else if(nStepNumber.length == 0)
@@ -1552,7 +1582,6 @@ var gaectkSettlement =
 					_sendCheckoutAction(nStepNumber);
 				else if(nStepNumber != null && sOption != null)
 					_sendCheckoutAction(nStepNumber, sOption);
-				
 				// Send data using an event after set ec-action
 				_sendGaEventWithoutInteraction('EEC', 'checkout_step_'+String(nStepNumber), _g_sPrefixSettlement + '_option_' + this._g_sOptionSettlementPage, nTotalPrice); 
 			}
@@ -1573,7 +1602,6 @@ var gaectkPurchase =
 	_g_aProductInfo : [],
 	_g_aFbItemSrls : [],
 	_g_bFacebookConvLoaded : false,
-
 	init : function()
 	{
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
@@ -1632,29 +1660,41 @@ var gaectkPurchase =
 		if(!nTotalPrice)
 			return false;
 
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.purchase',
-				ecommerce: {
-					currencyCode: _g_sCurrency,
-					purchase: {
-						actionField: {
-							id: nOrderSrl,
-							affiliation: _g_sAffiliation,
-							revenue: nRevenue,
-							tax: nTaxAmnt,
-							shipping: nShippingCost,
-							coupon: sCoupon
-						},
-						products: aProductToCheckoutUa
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.purchase', {
+						currencyCode: _g_sCurrency,
+						purchase: {
+							actionField: {
+								id: nOrderSrl,
+								affiliation: _g_sAffiliation,
+								revenue: nRevenue,
+								tax: nTaxAmnt,
+								shipping: nShippingCost,
+								coupon: sCoupon
+							},
+							products: aProductToCheckoutUa
+						}
 					}
-				}
-			});
+				);
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('purchase', {
+					currency: _g_sCurrency,
+					transaction_id: nOrderSrl,
+					value: nRevenue,
+					affiliation: _g_sAffiliation,
+					coupon: sCoupon,
+					shipping: nShippingCost,
+					tax: nTaxAmnt,
+					items: aProductToCheckoutGa4
+				});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
@@ -1667,7 +1707,7 @@ var gaectkPurchase =
 					shipping: nShippingCost,
 					tax: nTaxAmnt,
 					items: aProductToCheckoutGa4
-					});
+				});
 				console.log('event - purchase - GAv4');
 			}
 			if(_g_bUaPropertyLoaded)  // UA
@@ -1753,21 +1793,18 @@ var gaectkMypage =
 		if(!nRefundedAmnt)
 			return false;
 
-		if(_g_bGtmIdLoaded)  // GTM + UA dataLayer Mode
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			window.dataLayer = window.dataLayer || [];
-			window.dataLayer.push({ecommerce: null});
-			window.dataLayer.push({
-				event: 'eec.refund',
-				ecommerce: {
-				refund: {
-					actionField: {id: nOrderSrl}
-					}, 
-					products: aProductToRefundUa
-				}
-			});
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.refund', {refund: {actionField: {id: nOrderSrl}}, products: aProductToRefundUa});
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				_triggerDataLayer('refund', {transaction_id: nOrderSrl});
+			}
 		}
-		else  // GA direct Mode
+		else  // JS API mode
 		{
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
