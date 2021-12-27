@@ -2,8 +2,8 @@
  * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.4.1';
-var _g_sGaectkVersionDate = '2021-12-06';
+var _g_sGaectkVersion = '1.4.2';
+var _g_sGaectkVersionDate = '2021-12-28';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -438,8 +438,7 @@ var gaectkStorage =
 }
 
 var gaectkItems = 
-{
-	// https://bbaktaeho-95.tistory.com/40
+{	// https://bbaktaeho-95.tistory.com/40
 	_g_aProductDetailInfo: [],
 	init : function()
 	{
@@ -521,13 +520,25 @@ var gaectkItems =
 			{
 				this._g_aProductDetailInfo[sItemSrl].promotion_id = sPromotionId;
 			}
+			else
+			{
+				delete this._g_aProductDetailInfo[sItemSrl].promotion_id;
+			}
 			if(sPromotionName != null && sPromotionName != undefined && sPromotionName.length != 0)
 			{
 				this._g_aProductDetailInfo[sItemSrl].promotion_name = sPromotionName;
 			}
+			else
+			{
+				delete this._g_aProductDetailInfo[sItemSrl].promotion_name;
+			}
 			if(sCreativeName != null && sCreativeName != undefined && sCreativeName.length != 0)
 			{
 				this._g_aProductDetailInfo[sItemSrl].creative_name = sCreativeName;
+			}
+			else
+			{
+				delete this._g_aProductDetailInfo[sItemSrl].creative_name;
 			}
 		}
 	},
