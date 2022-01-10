@@ -2,8 +2,8 @@
  * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.4.2';
-var _g_sGaectkVersionDate = '2021-12-28';
+var _g_sGaectkVersion = '1.4.3';
+var _g_sGaectkVersionDate = '2022-01-08';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -456,7 +456,7 @@ var gaectkItems =
 			}
 		}
 	},
-	register: function(nItemSrl, sItemName, nPosition, sBrand, sCategory, sVariant, sListName, nPrice, sCoupon, sPromotionId, sPromotionName, sCreativeName)
+	register: function(nItemSrl, sItemName, nPosition, sBrand, sCategory, sVariant, sListName, nPrice, sCoupon)  //, sPromotionId, sPromotionName, sCreativeName)
 	{
 		sItemSrl = String(nItemSrl);
 		// UA would be deprecated someday hence this construction is GAv4 biased
@@ -484,7 +484,7 @@ var gaectkItems =
 										// quantity: 0
 										// creative_slot: ''
 			};
-			if(sPromotionId != null && sPromotionId != undefined && sPromotionId.length != 0)
+			/*if(sPromotionId != null && sPromotionId != undefined && sPromotionId.length != 0)
 			{
 				this._g_aProductDetailInfo[sItemSrl].promotion_id = sPromotionId;
 			}
@@ -495,7 +495,7 @@ var gaectkItems =
 			if(sCreativeName != null && sCreativeName != undefined && sCreativeName.length != 0)
 			{
 				this._g_aProductDetailInfo[sItemSrl].creative_name = sCreativeName;
-			}
+			}*/
 		}
 		else // update
 		{
@@ -516,7 +516,7 @@ var gaectkItems =
 			{
 				this._g_aProductDetailInfo[sItemSrl].coupon = sCoupon;
 			}
-			if(sPromotionId != null && sPromotionId != undefined && sPromotionId.length != 0)
+			/*if(sPromotionId != null && sPromotionId != undefined && sPromotionId.length != 0)
 			{
 				this._g_aProductDetailInfo[sItemSrl].promotion_id = sPromotionId;
 			}
@@ -539,7 +539,7 @@ var gaectkItems =
 			else
 			{
 				delete this._g_aProductDetailInfo[sItemSrl].creative_name;
-			}
+			}*/
 		}
 	},
 	getItemInfoBySrl: function(sGaVersion, nItemSrl)
@@ -567,7 +567,7 @@ var gaectkItems =
 					brand: this._g_aProductDetailInfo[sItemSrl].item_brand, 
 					category: this._g_aProductDetailInfo[sItemSrl].item_category,
 					variant: this._g_aProductDetailInfo[sItemSrl].item_variant,
-					position: this._g_aProductDetailInfo[sItemSrl].index,
+					index: this._g_aProductDetailInfo[sItemSrl].index,
 					price: this._g_aProductDetailInfo[sItemSrl].price
 				};
 			}
@@ -582,9 +582,9 @@ var gaectkItems =
 					item_variant: this._g_aProductDetailInfo[sItemSrl].item_variant,
 					index: this._g_aProductDetailInfo[sItemSrl].index,
 					price: this._g_aProductDetailInfo[sItemSrl].price,
-					promotion_id: this._g_aProductDetailInfo[sItemSrl].promotion_id,
+					/*promotion_id: this._g_aProductDetailInfo[sItemSrl].promotion_id,
 					promotion_name: this._g_aProductDetailInfo[sItemSrl].promotion_name,
-					creative_name: this._g_aProductDetailInfo[sItemSrl].creative_name
+					creative_name: this._g_aProductDetailInfo[sItemSrl].creative_name*/
 				};
 			}
 		}
@@ -713,6 +713,7 @@ var gaectkList =
 	_g_nListPosition: 1,
 	_g_sListTitle: null,
 	_g_aProductInfo: [],
+	_g_nItemsPerChunk: 20,
 	_g_oPromoInfo: {id:'', name:'', creative:'', location_id:''},
 	init : function(nCurrentPage, nItemsPerPage)
 	{
@@ -728,22 +729,29 @@ var gaectkList =
 		this._g_sListTitle = _parseUrl('pathname');  // replace with GTM default variable Page Path?
 		return true;
 	},
-	loadPromoInfo: function(sId, sName, sCreatvie, sLocation)
+	loadPromoInfo: function(sId, sName, sCreatvie, sPosition)  // sId, sName, sCreatvie, sLocation 문자열 길어지면 413 status
 	{ // loadPromoInfo() must precede queueItemInfo()
 		if(sId.length == 0 && sName.length == 0)
 		{
 			alert('invalid promotion info - either id or name is mandatory!');
 			return false;
 		}
+		// UA attrs
 		this._g_oPromoInfo.id = sId;
 		this._g_oPromoInfo.name = sName;
 		this._g_oPromoInfo.creative = sCreatvie;
-		this._g_oPromoInfo.location_id = sLocation;
+		this._g_oPromoInfo.position = sPosition;
+		// GA 4 attrs
+		//this._g_oPromoInfo.creative_name = sCreatvie;
+		//this._g_oPromoInfo.creative_slot = sCreatvie;
+		//this._g_oPromoInfo.location_id = sLocation;
+		//this._g_oPromoInfo.promotion_id = sId;
+		//this._g_oPromoInfo.promotion_name = sName;
+
 	},
 	queueItemInfo: function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nPrice)
 	{
-		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, this._g_sListTitle, _enforceInt(nPrice), null, 
-			this._g_oPromoInfo.id, this._g_oPromoInfo.name, this._g_oPromoInfo.creative);
+		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, this._g_sListTitle, _enforceInt(nPrice), null); //, this._g_oPromoInfo.id, this._g_oPromoInfo.name, this._g_oPromoInfo.creative);
 		this._g_aProductInfo.push({item_id: nItemSrl});  // this should be srl array
 	},
 	patchImpression : function(nItemChunk)
@@ -788,11 +796,6 @@ var gaectkList =
 					for(var i = 0; i < nCnt; i++)
 					{
 						oSingleProduct = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
-						//oSingleProduct.promotion_id = this._g_oPromoInfo.id;
-						//oSingleProduct.promotion_name = this._g_oPromoInfo.name;
-						//oSingleProduct.creative_name = this._g_oPromoInfo.creative;
-						oSingleProduct.creative_slot = this._g_oPromoInfo.position;
-						oSingleProduct.location_id = this._g_oPromoInfo.position;
 						aProduct.push(oSingleProduct);
 					}
 					_triggerDataLayer('view_promotion', {items: aProduct});
@@ -802,16 +805,25 @@ var gaectkList =
 		}
 		else  // JS API mode
 		{
+			if(typeof nItemChunk === 'undefined')
+				nItemChunk = this._g_nItemsPerChunk;
+			if(nItemChunk == 0)
+				nItemChunk = this._g_nItemsPerChunk;
+			var nLength = this._g_aProductInfo.length;
+			var nPushForceCnt = nLength - 1;
+			var aProduct = [];
 			if(_g_bGa4DatastreamIdLoaded)  // GAv4
 			{
-				var aProduct = [];
-				var nCnt = this._g_aProductInfo.length;
 				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
 				{
-					for(var i = 0; i < nCnt; i++)
+					for(var i=0; i < nLength; i++)
 					{
 						oSingleProduct = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
 						aProduct.push(oSingleProduct);
+						/*if((i > 0 && i % nItemChunk == 0) || i == nPushForceCnt)
+						{
+							;
+						}*/
 					}
 					gtag('event', 'view_item_list', {
 						currency: _g_sCurrency,
@@ -819,17 +831,13 @@ var gaectkList =
 						item_list_name: this._g_sListTitle,
 						items: aProduct
 					});
+					var aProduct = [];
 				}
 				else
 				{
-					for(var i = 0; i < nCnt; i++)
+					for(var i=0; i < nLength; i++)
 					{
 						oSingleProduct = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
-						//oSingleProduct.promotion_id = this._g_oPromoInfo.id;
-						//oSingleProduct.promotion_name = this._g_oPromoInfo.name;
-						//oSingleProduct.creative_name = this._g_oPromoInfo.creative;
-						oSingleProduct.creative_slot = this._g_oPromoInfo.position;
-						oSingleProduct.location_id = this._g_oPromoInfo.position;
 						aProduct.push(oSingleProduct);
 					}
 					gtag('event', 'view_promotion', {
@@ -841,21 +849,17 @@ var gaectkList =
 						location_id: this._g_oPromoInfo.position,
 						items: aProduct
 					});
+					var aProduct = [];
 				}
 				delete aProduct;
 			}
 			if(_g_bUaPropertyLoaded)  // UA
 			{
-				if(typeof nItemChunk === 'undefined')
-					nItemChunk = 30;
-				if(nItemChunk == 0)
-					nItemChunk = 30;
-				var nLength = this._g_aProductInfo.length;
 				for(var i = 0; i < nLength; i++)
 				{
 					oSingleProduct = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
 					ga('ec:addImpression', oSingleProduct);
-					if(i > 0 && i % nItemChunk == 0)
+					if((i > 0 && i % nItemChunk == 0) || i == nPushForceCnt)
 						_sendGaEventWithoutInteraction('EEC', 'add_imp', _g_sPrefixAddImpression+'_item_chunk_'+String(nItemChunk), 0);
 				}
 				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
@@ -910,11 +914,6 @@ var gaectkList =
 				}
 				else
 				{
-					//oSingleProductGa4.promotion_id = this._g_oPromoInfo.id;
-					//oSingleProductGa4.promotion_name = this._g_oPromoInfo.name;
-					//oSingleProductGa4.creative_name = this._g_oPromoInfo.creative;
-					oSingleProductGa4.creative_slot = this._g_oPromoInfo.position;
-					oSingleProductGa4.location_id = this._g_oPromoInfo.position;
 					_triggerDataLayer('select_promotion', {items:[oSingleProductGa4]});
 				}
 			}
@@ -933,11 +932,6 @@ var gaectkList =
 				}
 				else
 				{
-					//oSingleProductGa4.promotion_id = this._g_oPromoInfo.id;
-					//oSingleProductGa4.promotion_name = this._g_oPromoInfo.name;
-					//oSingleProductGa4.creative_name = this._g_oPromoInfo.creative;
-					oSingleProductGa4.creative_slot = this._g_oPromoInfo.position;
-					oSingleProductGa4.location_id = this._g_oPromoInfo.position;
 					gtag('event', 'select_promotion', {
 						promotion_id: this._g_oPromoInfo.id,
 						promotion_name: this._g_oPromoInfo.name,
@@ -987,7 +981,7 @@ var gaectkDetail =
 	loadItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice)
 	{
 		this._g_aProductInfo.push({item_id: nItemSrl});
-		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null, null, null, null);
+		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null); //, null, null, null);
 		return true;
 	},
 	patchDetail : function()
@@ -1208,7 +1202,7 @@ var gaectkCart =
 	queueItemInfo : function(nCartSrl, nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, sCoupon)
 	{
 		this._g_sCoupon = sCoupon;
-		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), sCoupon, null, null, null);
+		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), sCoupon); //, null, null, null);
 		this._g_aProductInfo.push({ cartid: nCartSrl, // non GA variable
 									item_id: nItemSrl,
 									quantity: _enforceInt(nTotalQuantity)
@@ -1626,7 +1620,7 @@ var gaectkSettlement =
 	},
 	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity)
 	{
-		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null, null, null, null);
+		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null); //, null, null, null);
 		this._g_aProductInfo.push({item_id: nItemSrl, quantity: _enforceInt(nTotalQuantity)});
 		return true;
 	},
@@ -1760,7 +1754,7 @@ var gaectkPurchase =
 	},
 	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity, sCoupon)
 	{   // can be ignored if engine does not provide purchased item list in checkout result page
-		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), sCoupon, null, null, null);
+		gaectkItems.register(nItemSrl, sItemName, null, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), sCoupon); //, null, null, null);
 		this._g_aProductInfo.push({ item_id: nItemSrl, coupon: sCoupon, quantity: _enforceInt(nTotalQuantity)});
 		this._g_aFbItemSrls.push(nItemSrl);
 		return true;
@@ -1903,7 +1897,7 @@ var gaectkMypage =
 	},
 	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity)
 	{
-		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null, null, null, null);
+		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, null, _enforceInt(nItemPrice), null); //, null, null, null);
 		this._g_aProductInfo.push({ item_id: nItemSrl, quantity: _enforceInt(nTotalQuantity)});
 		return true;
 	},
