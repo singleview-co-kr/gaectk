@@ -2,8 +2,8 @@
  * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.4.3';
-var _g_sGaectkVersionDate = '2022-01-08';
+var _g_sGaectkVersion = '1.5.0';
+var _g_sGaectkVersionDate = '2022-01-20';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -712,6 +712,7 @@ var gaectkList =
 {
 	_g_nListPosition: 1,
 	_g_sListTitle: null,
+	_g_bImpressionPatched: false,
 	_g_aProductInfo: [],
 	_g_nItemsPerChunk: 20,
 	_g_oPromoInfo: {id:'', name:'', creative:'', location_id:''},
@@ -754,8 +755,160 @@ var gaectkList =
 		gaectkItems.register(nItemSrl, sItemName, this._g_nListPosition++, sBrand, sCategory, sVariant, this._g_sListTitle, _enforceInt(nPrice), null); //, this._g_oPromoInfo.id, this._g_oPromoInfo.name, this._g_oPromoInfo.creative);
 		this._g_aProductInfo.push({item_id: nItemSrl});  // this should be srl array
 	},
-	patchImpression : function(nItemChunk)
+	patchImpression: function(nItemChunk, sThumbImgId)
 	{
+		if(sThumbImgId)  // required tag structure is <a class='sThumbImgId'><img src=''></a>
+		{
+			// get first thumbnail only
+			try
+			{
+				var oClsContent = document.querySelector('.'+ sThumbImgId);
+			}
+			catch(e)
+			{
+				var oClsContent = null;
+			}
+			try
+			{
+				var oIdContent = document.querySelector('#'+ sThumbImgId);
+			}
+			catch(e)
+			{
+				var oIdContent = null;
+			}
+			
+			oFirstThumb = null;
+			if(oClsContent) 
+			{
+				oFirstThumb = oClsContent;  //oClsContent.getElementsByTagName('img')[0];  
+			}
+			if(oIdContent)
+			{
+				oFirstThumb = oIdContent;  //oIdContent.getElementsByTagName('img')[0];
+			}
+			delete oClsContent;
+			delete oIdContent;
+			if(oFirstThumb)
+			{
+				document.addEventListener('scroll', function () {
+					if(gaectkList._isInViewport(oFirstThumb))
+					{
+						gaectkList._transmitImpData();
+					}
+				}, {passive: true});
+			}
+			else
+			{
+				gaectkList._transmitImpData();
+			}
+		}
+		else
+		{
+			gaectkList._transmitImpData();
+		}
+	},
+	sendClicked : function(nItemSrl)  // Trigger when click link to a product.
+	{
+		oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', nItemSrl);
+		if(oSingleProductGa4 == null)
+		{
+			console.log('invalid clicked item srl!')
+			return false;
+		}
+		oSingleProductGa4.quantity = 1;
+		oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', nItemSrl);
+		delete oSingleProductUa.list;
+		delete oSingleProductUa.price;
+		delete oSingleProductUa.quantity;
+
+		var sEventLbl = _g_sPrefixItemClicked + '_on_' + this._g_sListTitle +'_pos:' + oSingleProductGa4.index + '_' + oSingleProductGa4.item_id+'_'+oSingleProductGa4.item_name;
+		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
+		{
+			if(_g_bGtmUaActivated) // GTM trigger UA
+			{
+				_triggerDataLayer('eec.impressionClick', {
+					click: {
+						actionField: {list: this._g_sListTitle},
+						products: [oSingleProductUa]
+					}},
+					{sv_event_lbl: sEventLbl}
+				);
+				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
+				{
+					sId = this._g_oPromoInfo.id.length ? this._g_oPromoInfo.id : '';
+					sName = this._g_oPromoInfo.name.length ? this._g_oPromoInfo.name : '';
+					_triggerDataLayer('eec.promotionClick', {actionField: {promo_title: _g_sPrefixPromoClicked+'_'+sId+'_'+sName}, promoClick: {promotions: [this._g_oPromoInfo]}});
+				}
+			}
+			if(_g_bGtmGa4Activated) // GTM trigger GA4
+			{
+				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
+				{
+					_triggerDataLayer('select_item', {items:[oSingleProductGa4]});
+				}
+				else
+				{
+					_triggerDataLayer('select_promotion', {items:[oSingleProductGa4]});
+				}
+			}
+		}
+		else  // JS API mode
+		{
+			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			{
+				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
+				{
+					gtag('event', 'select_item', {
+						item_list_id: this._g_sListTitle,
+						item_list_name: this._g_sListTitle,
+						items: [oSingleProductGa4]
+					});
+				}
+				else
+				{
+					gtag('event', 'select_promotion', {
+						promotion_id: this._g_oPromoInfo.id,
+						promotion_name: this._g_oPromoInfo.name,
+						creative_name: this._g_oPromoInfo.creative,
+						creative_slot: this._g_oPromoInfo.position,
+						location_id: this._g_oPromoInfo.position,
+						items: [oSingleProductGa4]
+					});
+				}
+			}
+			if(_g_bUaPropertyLoaded)  // UA
+			{
+				ga('ec:addProduct', oSingleProductUa);
+				ga('ec:setAction', 'click', {list: this._g_sListTitle});
+				_sendGaEventWithoutInteraction('EEC', 'click_item', sEventLbl);
+				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
+				{
+					ga('ec:addPromo', this._g_oPromoInfo);
+					ga('ec:setAction', 'promo_click');
+					sId = this._g_oPromoInfo.id.length ? this._g_oPromoInfo.id : '';
+					sName = this._g_oPromoInfo.name.length ? this._g_oPromoInfo.name : '';
+					_sendGaEventWithoutInteraction('EEC', 'click_promo', _g_sPrefixPromoClicked+'_'+sId+'_'+sName, 0);
+				}
+			}
+		}
+		delete oSingleProductGa4;
+		delete oSingleProductUa;
+	},
+	_isInViewport: function(el)
+	{   // this method is for gaectkList.patchImpression()
+		const rect = el.getBoundingClientRect();
+		return (
+			rect.top >= 0 &&
+			rect.left >= 0 &&
+			rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+			rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+		);
+	},
+	_transmitImpData: function()
+	{
+		if(this._g_bImpressionPatched)  // allow single transmission if onscroll mode
+			return true;
+		console.log('transmitted');
 		if(this._g_aProductInfo.length == 0)
 		{
 			console.log('no items on catalog');
@@ -871,94 +1024,8 @@ var gaectkList =
 				}
 			}
 		}
+		this._g_bImpressionPatched = true;
 		return true;
-	},
-	sendClicked : function(nItemSrl)  // Trigger when click link to a product.
-	{
-		oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', nItemSrl);
-		if(oSingleProductGa4 == null)
-		{
-			console.log('invalid clicked item srl!')
-			return false;
-		}
-		oSingleProductGa4.quantity = 1;
-		oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', nItemSrl);
-		delete oSingleProductUa.list;
-		delete oSingleProductUa.price;
-		delete oSingleProductUa.quantity;
-
-		var sEventLbl = _g_sPrefixItemClicked + '_on_' + this._g_sListTitle +'_pos:' + oSingleProductGa4.index + '_' + oSingleProductGa4.item_id+'_'+oSingleProductGa4.item_name;
-		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
-		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.impressionClick', {
-					click: {
-						actionField: {list: this._g_sListTitle},
-						products: [oSingleProductUa]
-					}},
-					{sv_event_lbl: sEventLbl}
-				);
-				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
-				{
-					sId = this._g_oPromoInfo.id.length ? this._g_oPromoInfo.id : '';
-					sName = this._g_oPromoInfo.name.length ? this._g_oPromoInfo.name : '';
-					_triggerDataLayer('eec.promotionClick', {actionField: {promo_title: _g_sPrefixPromoClicked+'_'+sId+'_'+sName}, promoClick: {promotions: [this._g_oPromoInfo]}});
-				}
-			}
-			if(_g_bGtmGa4Activated) // GTM trigger GA4
-			{
-				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
-				{
-					_triggerDataLayer('select_item', {items:[oSingleProductGa4]});
-				}
-				else
-				{
-					_triggerDataLayer('select_promotion', {items:[oSingleProductGa4]});
-				}
-			}
-		}
-		else  // JS API mode
-		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
-			{
-				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
-				{
-					gtag('event', 'select_item', {
-						item_list_id: this._g_sListTitle,
-						item_list_name: this._g_sListTitle,
-						items: [oSingleProductGa4]
-					});
-				}
-				else
-				{
-					gtag('event', 'select_promotion', {
-						promotion_id: this._g_oPromoInfo.id,
-						promotion_name: this._g_oPromoInfo.name,
-						creative_name: this._g_oPromoInfo.creative,
-						creative_slot: this._g_oPromoInfo.position,
-						location_id: this._g_oPromoInfo.position,
-						items: [oSingleProductGa4]
-					});
-				}
-			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				ga('ec:addProduct', oSingleProductUa);
-				ga('ec:setAction', 'click', {list: this._g_sListTitle});
-				_sendGaEventWithoutInteraction('EEC', 'click_item', sEventLbl);
-				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
-				{
-					ga('ec:addPromo', this._g_oPromoInfo);
-					ga('ec:setAction', 'promo_click');
-					sId = this._g_oPromoInfo.id.length ? this._g_oPromoInfo.id : '';
-					sName = this._g_oPromoInfo.name.length ? this._g_oPromoInfo.name : '';
-					_sendGaEventWithoutInteraction('EEC', 'click_promo', _g_sPrefixPromoClicked+'_'+sId+'_'+sName, 0);
-				}
-			}
-		}
-		delete oSingleProductGa4;
-		delete oSingleProductUa;
 	}
 }
 
