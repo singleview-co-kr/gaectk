@@ -2,8 +2,8 @@
  * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.5.0';
-var _g_sGaectkVersionDate = '2022-01-20';
+var _g_sGaectkVersion = '1.5.1';
+var _g_sGaectkVersionDate = '2022-01-23';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -710,14 +710,15 @@ var gaectkHeader =
 
 var gaectkList = 
 {
-	_g_nListPosition: 1,
-	_g_sListTitle: null,
-	_g_bImpressionPatched: false,
-	_g_aProductInfo: [],
-	_g_nItemsPerChunk: 20,
-	_g_oPromoInfo: {id:'', name:'', creative:'', location_id:''},
-	init : function(nCurrentPage, nItemsPerPage)
+	init : function(nCurrentPage, nItemsPerPage, sCatalogName)
 	{
+		this._g_nListPosition = 1;
+		this._g_sListTitle = null;
+		this._g_bImpressionPatched = false;
+		this._g_aProductInfo = [];
+		this._g_nItemsPerChunk = 20;
+		this._g_oPromoInfo = {id:'', name:'', creative:'', location_id:''};
+
 		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
 		{
 			_g_bEcRequired = true;
@@ -727,8 +728,23 @@ var gaectkList =
 			nCurrentPage = 1;
 		if(nCurrentPage > 1) // 한페이지에 복수 리스트 모듈이 있는 경우는 메인페이지 혹은 첫페이지로 한정함
 			this._g_nListPosition = nItemsPerPage * (nCurrentPage - 1) + 1;
-		this._g_sListTitle = _parseUrl('pathname');  // replace with GTM default variable Page Path?
+		
+		if(sCatalogName)
+			this._g_sListTitle = sCatalogName;
+		else
+			this._g_sListTitle = _parseUrl('pathname');  // replace with GTM default variable Page Path?
+		console.log(this._g_sListTitle);
 		return true;
+	},
+	getCurrentPageFromUrl: function(sName)
+	{  // use if page must be recognized by URL
+		sUrl = window.location.href;
+		sName = sName.replace(/[[]]/g, "\$&");
+		var oRegex = new RegExp("[?&]" + sName + "(=([^&#]*)|&|#|$)"),
+		aResults = oRegex.exec(sUrl);
+		if(!aResults || !aResults[2])
+			return 1;
+		return decodeURIComponent(aResults[2].replace(/\+/g, " "));
 	},
 	loadPromoInfo: function(sId, sName, sCreatvie, sPosition)  // sId, sName, sCreatvie, sLocation 문자열 길어지면 413 status
 	{ // loadPromoInfo() must precede queueItemInfo()
