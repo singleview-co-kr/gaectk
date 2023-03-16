@@ -161,25 +161,41 @@ function _sendGaEventWithInteraction(sEventCategory, sEventAction, sEventLabel, 
 {
 	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
 	// Send data using an event just after set ec-action
-	if(!_g_bUaPropertyLoaded) // this global method is for UA only
-		return false;
-	if(nEventValue === undefined)
+	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 	{
-		ga('send', 'event',  {
-			'eventCategory': sEventCategory,   // Required.
-			'eventAction': sEventAction,      // Required.
-			'eventLabel': sEventLabel
-			});
+		;
 	}
-	else
+	else  // JS API mode
 	{
-		nEventValue = _enforceInt(nEventValue);
-		ga('send', 'event',  {
-			'eventCategory': sEventCategory,   // Required.
-			'eventAction': sEventAction,      // Required.
-			'eventLabel': sEventLabel,
-			'eventValue': nEventValue // use number only, null string '' commits error.
+		if(_g_bGa4DatastreamIdLoaded)  // GAv4
+		{
+			sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
+			gtag('event', sCustomEventLbl , {
+				currency: _g_sCurrency,
+				value: _enforceInt(nEventValue)
 			});
+		}
+		if(_g_bUaPropertyLoaded)  // UA
+		{
+			if(nEventValue === undefined)
+			{
+				ga('send', 'event',  {
+					'eventCategory': sEventCategory,   // Required.
+					'eventAction': sEventAction,      // Required.
+					'eventLabel': sEventLabel
+				});
+			}
+			else
+			{
+				nEventValue = _enforceInt(nEventValue);
+				ga('send', 'event',  {
+					'eventCategory': sEventCategory,   // Required.
+					'eventAction': sEventAction,      // Required.
+					'eventLabel': sEventLabel,
+					'eventValue': nEventValue // use number only, null string '' commits error.
+				});
+			}
+		}
 	}
 }
 
