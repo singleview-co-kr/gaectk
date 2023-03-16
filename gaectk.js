@@ -2,8 +2,8 @@
  * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.5.1';
-var _g_sGaectkVersionDate = '2022-01-23';
+var _g_sGaectkVersion = '1.5.2';
+var _g_sGaectkVersionDate = '2023-03-17';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -142,12 +142,9 @@ function sendClickEventGaectk(sCategory, sPageTitle, sLocation, sWindow)
 		sWindow = 'self';
 	if(_g_bGa4DatastreamIdLoaded)
 	{
-		console.log('sendClickEventGaectk denied - use Automatic collected event and Create Event');
+		console.log('sendClickEventGaectk warning - Don\'t forget Automatic collected event and Create Event');
 	}
-	if(_g_bUaPropertyLoaded)
-	{
-		_sendGaEventWithInteraction(sCategory, 'clicked', sPageTitle);
-	}
+	_sendGaEventWithInteraction(sCategory, 'clicked', sPageTitle);
 	if(sLocation != '#')
 	{
 		if(sWindow == 'self')
