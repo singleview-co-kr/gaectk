@@ -2,8 +2,8 @@
  * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.5.2';
-var _g_sGaectkVersionDate = '2023-03-17';
+var _g_sGaectkVersion = '1.5.3';
+var _g_sGaectkVersionDate = '2023-05-14';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -1159,7 +1159,7 @@ var gaectkDetail =
 			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
-				_triggerDataLayer('begin_checkout', {items:[oSingleProductGa4]});
+				_triggerDataLayer('begin_checkout', {items:[oSingleProductGa4], value: nTotalPrice});
 			}
 		}
 		else  // JS API mode
@@ -1197,7 +1197,7 @@ var gaectkDetail =
 		var nTotalQuantity = _enforceInt(nTotalQuantity);
 		oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[0].item_id);
 		oSingleProductGa4.quantity = nTotalQuantity;
-		var nTotalPrice = nTotalQuantity * oSingleProductGa4.price;
+		var nEventValue = nTotalQuantity * oSingleProductGa4.price / 2;  // discount event value, not sure to buy
 		var sListTitle = oSingleProductGa4.item_list_name;
 		var sEventLbl = _g_sPrefixAddToCart + '_' + oSingleProductGa4.item_id + '_' + oSingleProductGa4.item_name;
 		
@@ -1216,12 +1216,12 @@ var gaectkDetail =
 							products: [oSingleProductUa]  // attrs should be id, name, category, brand, variant, price, quantity
 						}
 					},
-					{sv_event_lbl: sEventLbl, sv_event_val: nTotalPrice}
+					{sv_event_lbl: sEventLbl, sv_event_val: nEventValue}
 				);
 			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
-				_triggerDataLayer('add_to_cart', {items:[oSingleProductGa4]});
+				_triggerDataLayer('add_to_cart', {items:[oSingleProductGa4], value: nEventValue});
 			}
 		}
 		else  // JS API mode
@@ -1231,7 +1231,7 @@ var gaectkDetail =
 				this._g_aProductInfo[0].quantity = nTotalQuantity;
 				gtag('event', 'add_to_cart', {
 					currency: _g_sCurrency,
-					value: nTotalPrice / 2,  // discount event value, not sure to buy
+					value: nEventValue, // nTotalPrice / 2,  
 					items: [oSingleProductGa4]  //this._g_aProductInfo
 				});
 				console.log('event - add_to_cart - GAv4')
@@ -1241,7 +1241,7 @@ var gaectkDetail =
 				ga('ec:addProduct', oSingleProductUa);
 				ga('ec:setAction', 'add');
 				// Send data using an event.
-				_sendGaEventWithoutInteraction( 'EEC', 'add_cart', sEventLbl, nTotalPrice);
+				_sendGaEventWithoutInteraction( 'EEC', 'add_cart', sEventLbl, nEventValue);
 				console.log('event - add_to_cart - UA')
 			}
 		}
