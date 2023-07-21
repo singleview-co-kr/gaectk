@@ -2,8 +2,8 @@
  * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.5.3';
-var _g_sGaectkVersionDate = '2023-05-14';
+var _g_sGaectkVersion = '1.5.4';
+var _g_sGaectkVersionDate = '2023-07-21';
 var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
 var _g_bEcRequired = false; // for UA only
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
@@ -36,26 +36,10 @@ var _g_aImageElement = [];
 
 function setUtmParamsGaectk(sSource, sMedium, sCampaign, sKeyword, sContentVariation)
 {
-	if(_g_bGa4DatastreamIdLoaded)
+	/*if(_g_bGa4DatastreamIdLoaded)
 	{
-		if(typeof sSource === 'undefined' || sSource === null || sSource === undefined || sSource.length == 0)
-			sSource = '';
-		if(typeof sMedium === 'undefined' || sMedium === null || sMedium === undefined || sMedium.length == 0)
-			sMedium = '';
-		if(typeof sCampaign === 'undefined' || sCampaign === null || sCampaign === undefined || sMedium.length == 0)
-			sCampaign = '';
-		if(typeof sContentVariation === 'undefined' || sContentVariation === null || sContentVariation === undefined || sContentVariation.length == 0)
-			sContentVariation = '';
-		// https://stackoverflow.com/questions/50231721/how-to-track-utm-source-in-google-analytics-using-gtag
-		gtag('config', _g_sGa4DatastreamId, {
-			campaign: {
-				source: sSource,
-				medium: sMedium,
-				name: sCampaign,
-				content: sContentVariation  // GA v4 does not handle term
-			}
-		});
-	}
+		// not working at this timing
+	}*/
 	if(_g_bUaPropertyLoaded)
 	{
 		if(sSource != '')
