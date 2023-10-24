@@ -1,15 +1,12 @@
 /*
- * Universal Analytics, Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
+ * Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.5.4';
-var _g_sGaectkVersionDate = '2023-07-21';
-var _g_bUaPropertyLoaded = false; // eg., 'UA-XXXXXX-13' 
-var _g_bEcRequired = false; // for UA only
+var _g_sGaectkVersion = '1.5.5';
+var _g_sGaectkVersionDate = '2023-10-24';
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
 var _g_sGa4DatastreamId = null;
 var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
-var _g_bGtmUaActivated = false; // GTM trigger UA
 var _g_bGtmGa4Activated = false; // GTM trigger GA4
 var 
 	_g_sPrefixAddImpression = 'ai',
@@ -36,109 +33,32 @@ var _g_aImageElement = [];
 
 function setUtmParamsGaectk(sSource, sMedium, sCampaign, sKeyword, sContentVariation)
 {
-	/*if(_g_bGa4DatastreamIdLoaded)
-	{
-		// not working at this timing
-	}*/
-	if(_g_bUaPropertyLoaded)
-	{
-		if(sSource != '')
-			ga('set', 'campaignSource', sSource);
-		if(sMedium != '')
-			ga('set', 'campaignMedium', sMedium);
-		if(sCampaign != '')
-			ga('set', 'campaignName', sCampaign);
-		if(sKeyword != '')
-			ga('set', 'campaignKeyword', sKeyword);
-		if(sContentVariation != '')
-			ga('set', 'campaignContent', sContentVariation);
-	}
+	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
+	return true;
 }
 
 function checkNonEcConversionGaectk(sVirtualUrl, sPageTitle)
 {
-	if(!_g_bUaPropertyLoaded) // this global method is for UA only
-		return false;
-	if(!_g_bSentConversionPageView)
-	{
-		ga('send', 'pageview', {
-		  'page': sVirtualUrl, // example '/thankyou.html'
-		  'title': sPageTitle
-		});
-		_g_bSentConversionPageView = true;
-	}
+	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
+	return true;
 }
 
 function checkVisibilityGaectk(elm, eval) 
 {
-	if(!_g_bUaPropertyLoaded) // this global method is for UA only
-		return false;
-	eval = eval || 'visible';
-	var vpH = jQuery(window).height(); // Viewport Height
-	var st = jQuery(window).scrollTop(); // Scroll Top
-	var y = jQuery(elm).offset().top;
-	var elementHeight = jQuery(elm).height();
-	var sCurObjId = jQuery(elm).attr('id');
-
-	if(eval == 'visible')
-	{
-		if((y < (vpH + st)) && (y > (st - elementHeight))) // mark an object is on viewport
-		{
-			var bChecked = false;
-			if(_g_aImageElement.length > 0)
-			{
-				for(var i in _g_aImageElement)
-				{
-					if(_g_aImageElement[i] == sCurObjId)
-					{
-						bChecked = true;
-						break;
-					}
-				}
-			}
-			if(!bChecked)
-			{
-				_sendGaEventWithoutInteraction( 'banner', 'displayed', sCurObjId );
-				_g_aImageElement[_g_aImageElement.length] = sCurObjId;
-			}
-		}
-	}
-	if(eval == 'above') 
-		return ((y < (vpH + st)));
+	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
+	return true;
 }
 
 function sendDisplayEventGaectk(sDisplayedObject)
 {
-	if(!_g_bUaPropertyLoaded) // this global method is for UA only
-		return false;
-	if(sDisplayedObject === null || sDisplayedObject === undefined || sDisplayedObject.length == 0)
-		return;
-	_sendGaEventWithoutInteraction( 'banner', 'displayed', sDisplayedObject );
+	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
+	return true;
 }
 
 function sendClickEventGaectk(sCategory, sPageTitle, sLocation, sWindow)
 {
-	if(!_g_bUaPropertyLoaded) // this global method is for UA only
-		return false;
-	if(sLocation === null || sLocation === undefined || sLocation.length == 0 || sLocation == '#')
-		sLocation = '#';
-	if(sWindow === null || sWindow === undefined || sWindow.length == 0)
-		sWindow = 'self';
-	if(_g_bGa4DatastreamIdLoaded)
-	{
-		console.log('sendClickEventGaectk warning - Don\'t forget Automatic collected event and Create Event');
-	}
-	_sendGaEventWithInteraction(sCategory, 'clicked', sPageTitle);
-	if(sLocation != '#')
-	{
-		if(sWindow == 'self')
-			location.href = sLocation;
-		else
-		{
-			window.open(sLocation, sWindow);
-			window.focus();
-		}
-	}
+	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
+	return true;
 }
 
 function _sendGaEventWithInteraction(sEventCategory, sEventAction, sEventLabel, nEventValue)
@@ -146,45 +66,24 @@ function _sendGaEventWithInteraction(sEventCategory, sEventAction, sEventLabel, 
 	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
 	// Send data using an event just after set ec-action
 	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
+		return true;
+	// JS API mode
+	if(_g_bGa4DatastreamIdLoaded)  // GAv4
 	{
-		;
-	}
-	else  // JS API mode
-	{
-		if(_g_bGa4DatastreamIdLoaded)  // GAv4
-		{
-			sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
-			gtag('event', sCustomEventLbl , {
-				currency: _g_sCurrency,
-				value: _enforceInt(nEventValue)
-			});
-		}
-		if(_g_bUaPropertyLoaded)  // UA
-		{
-			if(nEventValue === undefined)
-			{
-				ga('send', 'event',  {
-					'eventCategory': sEventCategory,   // Required.
-					'eventAction': sEventAction,      // Required.
-					'eventLabel': sEventLabel
-				});
-			}
-			else
-			{
-				nEventValue = _enforceInt(nEventValue);
-				ga('send', 'event',  {
-					'eventCategory': sEventCategory,   // Required.
-					'eventAction': sEventAction,      // Required.
-					'eventLabel': sEventLabel,
-					'eventValue': nEventValue // use number only, null string '' commits error.
-				});
-			}
-		}
+		sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
+		gtag('event', sCustomEventLbl , {
+			currency: _g_sCurrency,
+			value: _enforceInt(nEventValue)
+		});
 	}
 }
 
 function _sendGaEventWithoutInteraction(sEventCategory, sEventAction, sEventLabel, nEventValue)
 {
+	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
+		return true;
+	
+	// JS API mode
 	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
 	// Send data using an event just after set ec-action
 	if(typeof sEventCategory === 'undefined' || sEventCategory === null || sEventCategory === undefined || sEventCategory.length == 0)
@@ -197,80 +96,21 @@ function _sendGaEventWithoutInteraction(sEventCategory, sEventAction, sEventLabe
 		console.log('_sendGaEventWithoutInteraction denied: sEventAction is required!'); 
 		return false;
 	}
-	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
+	// GAv4
+	if(_g_bGa4DatastreamIdLoaded)  
 	{
-		;
-	}
-	else  // JS API mode
-	{
-		if(_g_bGa4DatastreamIdLoaded)  // GAv4
-		{
-			sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
-			gtag('event', sCustomEventLbl , {
-				currency: _g_sCurrency,
-				value: _enforceInt(nEventValue)
-				});
-		}
-		if(_g_bUaPropertyLoaded)  // UA
-		{
-			if(nEventValue === undefined)
-			{
-				ga('send', 'event', {
-					'eventCategory': sEventCategory,   // Required.
-					'eventAction': sEventAction,      // Required.
-					'eventLabel': sEventLabel,
-					'nonInteraction': 1 // true indicates that the event hit will not be used in bounce-rate calculation.
-					});	
-			}
-			else
-			{
-				nEventValue = _enforceInt(nEventValue);
-				ga('send', 'event', {
-					'eventCategory': sEventCategory,   // Required.
-					'eventAction': sEventAction,      // Required.
-					'eventLabel': sEventLabel,
-					'eventValue': nEventValue, // use number only, null string '' commits error.
-					'nonInteraction': 1 // true indicates that the event hit will not be used in bounce-rate calculation.
-					});
-			}
-		}
+		sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
+		gtag('event', sCustomEventLbl , {
+			currency: _g_sCurrency,
+			value: _enforceInt(nEventValue)
+		});
 	}
 }
 
 function _sendCheckoutAction(nStepNumber, sOption)
 {
-	if(!_g_bUaPropertyLoaded) // this global method is for UA only
-		return false;
-	switch(arguments.length)
-	{
-		case 1:
-			if(arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0)
-				break;
-			else
-			{
-				ga('ec:setAction','checkout', {'step': nStepNumber});
-				return;
-			}
-			break;
-		case 2:
-			if(arguments[0] === null || arguments[0] === undefined || arguments[0].length == 0 ||
-				arguments[1] === null || arguments[1] === undefined || arguments[1].length == 0)
-				break;
-			else
-			{
-				ga('ec:setAction','checkout', {
-					'step': nStepNumber,   // A value of 1 indicates this action is first checkout step. step number is related with ecommerce->shopping analysis -> checkout behavior
-					'option': sOption   // Used to specify additional info about a checkout stage, e.g. payment method.
-				});
-				return;
-			}
-			break;
-		default:
-			ga('ec:setAction','checkout');
-			return;
-			break;
-	}
-	return;
+	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
+	return true;
 }
 
 function _enforceInt(nEventValue)
@@ -553,37 +393,21 @@ var gaectkItems =
 		oRst = this._g_aProductDetailInfo[sItemSrl];
 		if(oRst === undefined)
 			return null;
-		else
-		{
-			if(sGaVersion == 'UA')
-			{
-				return {
-					id: this._g_aProductDetailInfo[sItemSrl].item_id, 
-					name: this._g_aProductDetailInfo[sItemSrl].item_name, 
-					list: this._g_aProductDetailInfo[sItemSrl].item_list_name,
-					brand: this._g_aProductDetailInfo[sItemSrl].item_brand, 
-					category: this._g_aProductDetailInfo[sItemSrl].item_category,
-					variant: this._g_aProductDetailInfo[sItemSrl].item_variant,
-					index: this._g_aProductDetailInfo[sItemSrl].index,
-					price: this._g_aProductDetailInfo[sItemSrl].price
-				};
-			}
-			else if(sGaVersion == 'GA4')
-			{	// always create new object to avoid quantity copying if same item exists with different cart id
-				return {
-					item_id: this._g_aProductDetailInfo[sItemSrl].item_id, 
-					item_name: this._g_aProductDetailInfo[sItemSrl].item_name, 
-					item_list_name: this._g_aProductDetailInfo[sItemSrl].item_list_name,
-					item_brand: this._g_aProductDetailInfo[sItemSrl].item_brand, 
-					item_category: this._g_aProductDetailInfo[sItemSrl].item_category,
-					item_variant: this._g_aProductDetailInfo[sItemSrl].item_variant,
-					index: this._g_aProductDetailInfo[sItemSrl].index,
-					price: this._g_aProductDetailInfo[sItemSrl].price,
-					/*promotion_id: this._g_aProductDetailInfo[sItemSrl].promotion_id,
-					promotion_name: this._g_aProductDetailInfo[sItemSrl].promotion_name,
-					creative_name: this._g_aProductDetailInfo[sItemSrl].creative_name*/
-				};
-			}
+		if(sGaVersion == 'GA4')
+		{	// always create new object to avoid quantity copying if same item exists with different cart id
+			return {
+				item_id: this._g_aProductDetailInfo[sItemSrl].item_id, 
+				item_name: this._g_aProductDetailInfo[sItemSrl].item_name, 
+				item_list_name: this._g_aProductDetailInfo[sItemSrl].item_list_name,
+				item_brand: this._g_aProductDetailInfo[sItemSrl].item_brand, 
+				item_category: this._g_aProductDetailInfo[sItemSrl].item_category,
+				item_variant: this._g_aProductDetailInfo[sItemSrl].item_variant,
+				index: this._g_aProductDetailInfo[sItemSrl].index,
+				price: this._g_aProductDetailInfo[sItemSrl].price,
+				/*promotion_id: this._g_aProductDetailInfo[sItemSrl].promotion_id,
+				promotion_name: this._g_aProductDetailInfo[sItemSrl].promotion_name,
+				creative_name: this._g_aProductDetailInfo[sItemSrl].creative_name*/
+			};
 		}
 	},
 	saveInfo: function()
@@ -602,7 +426,6 @@ var gaectkHeader =
 {
 	init : function(aTrackingId)
 	{
-		sUaTrackingId = false;
 		if(typeof aTrackingId === 'undefined' || aTrackingId === null || aTrackingId === undefined || aTrackingId.length == 0)
 		{
 			console.log('invalid tracking ID array')
@@ -624,31 +447,10 @@ var gaectkHeader =
 					console.log('Warning! You activated GTM without proper initialization.');
 				}
 			}
-			if(sTrackingId == 'GTMUA') // string GTMUA
-			{
-				_g_bGtmUaActivated = true;
-				console.log('GTMUA activated')
-			}
 			if(sTrackingId == 'GTMGA4') // string GTMGA4
 			{
 				_g_bGtmGa4Activated = true;
 				console.log('GTMGA4 activated')
-			}
-			if(sTrackingId.search(/^UA-/gm) == 0) // string like 'UA-XXXXXX-xx'
-			{
-				if(typeof ga === 'function')
-				{
-					_g_bUaPropertyLoaded = true;
-					if(!sUaTrackingId)
-					{
-						sUaTrackingId = sTrackingId;
-					}
-					console.log('UA activated')
-				}
-				else
-				{
-					console.log('Warning! You activated UA without proper initialization.');
-				}
 			}
 			if(sTrackingId.search(/^G-/gm) == 0) // string like 'G-XXXXXXXXXX'
 			{
@@ -664,16 +466,15 @@ var gaectkHeader =
 				}
 			}
 		}
-		if(!_g_bGtmIdLoaded && !_g_bUaPropertyLoaded && !_g_bGa4DatastreamIdLoaded)
+		if(!_g_bGtmIdLoaded && !_g_bGa4DatastreamIdLoaded)
 		{
 			alert('you call gaectk.js w/o any GA or GTM account id.\nThis might occur complicated malfunction!');
 			return false;
 		}
-		if(_g_bGtmIdLoaded && (_g_bUaPropertyLoaded || _g_bGa4DatastreamIdLoaded))
+		if(_g_bGtmIdLoaded && _g_bGa4DatastreamIdLoaded)
 		{
 			alert('Choose GA or GTM only to prevent duplicated hit!\ngaectk will deny send hit!');
 			_g_bGtmIdLoaded = false;
-			_g_bUaPropertyLoaded = false;
 			_g_bGa4DatastreamIdLoaded = false;
 			return false;
 		}
@@ -681,21 +482,11 @@ var gaectkHeader =
 		{
 			window.dataLayer = window.dataLayer || [];
 		}
-		if(_g_bUaPropertyLoaded)
-		{
-			ga('create', sUaTrackingId, 'auto');
-			ga('require', 'linkid');
-			ga('require', 'displayfeatures');
-		}
 		gaectkItems.init();
 		return true;
 	},
 	close : function()
 	{
-		if(_g_bUaPropertyLoaded)
-		{
-			ga('send', 'pageview');
-		}
 		gaectkItems.saveInfo();
 		return true;
 	},
@@ -716,11 +507,6 @@ var gaectkList =
 		this._g_nItemsPerChunk = 20;
 		this._g_oPromoInfo = {id:'', name:'', creative:'', location_id:''};
 
-		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
-		{
-			_g_bEcRequired = true;
-			ga('require', 'ec');
-		}
 		if(nCurrentPage === null || nCurrentPage === undefined || nCurrentPage.length == 0)
 			nCurrentPage = 1;
 		if(nCurrentPage > 1) // 한페이지에 복수 리스트 모듈이 있는 경우는 메인페이지 혹은 첫페이지로 한정함
@@ -750,11 +536,6 @@ var gaectkList =
 			alert('invalid promotion info - either id or name is mandatory!');
 			return false;
 		}
-		// UA attrs
-		this._g_oPromoInfo.id = sId;
-		this._g_oPromoInfo.name = sName;
-		this._g_oPromoInfo.creative = sCreatvie;
-		this._g_oPromoInfo.position = sPosition;
 		// GA 4 attrs
 		//this._g_oPromoInfo.creative_name = sCreatvie;
 		//this._g_oPromoInfo.creative_slot = sCreatvie;
@@ -829,30 +610,9 @@ var gaectkList =
 			return false;
 		}
 		oSingleProductGa4.quantity = 1;
-		oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', nItemSrl);
-		delete oSingleProductUa.list;
-		delete oSingleProductUa.price;
-		delete oSingleProductUa.quantity;
-
 		var sEventLbl = _g_sPrefixItemClicked + '_on_' + this._g_sListTitle +'_pos:' + oSingleProductGa4.index + '_' + oSingleProductGa4.item_id+'_'+oSingleProductGa4.item_name;
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.impressionClick', {
-					click: {
-						actionField: {list: this._g_sListTitle},
-						products: [oSingleProductUa]
-					}},
-					{sv_event_lbl: sEventLbl}
-				);
-				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
-				{
-					sId = this._g_oPromoInfo.id.length ? this._g_oPromoInfo.id : '';
-					sName = this._g_oPromoInfo.name.length ? this._g_oPromoInfo.name : '';
-					_triggerDataLayer('eec.promotionClick', {actionField: {promo_title: _g_sPrefixPromoClicked+'_'+sId+'_'+sName}, promoClick: {promotions: [this._g_oPromoInfo]}});
-				}
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
@@ -889,23 +649,8 @@ var gaectkList =
 					});
 				}
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				ga('ec:addProduct', oSingleProductUa);
-				ga('ec:setAction', 'click', {list: this._g_sListTitle});
-				_sendGaEventWithoutInteraction('EEC', 'click_item', sEventLbl);
-				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
-				{
-					ga('ec:addPromo', this._g_oPromoInfo);
-					ga('ec:setAction', 'promo_click');
-					sId = this._g_oPromoInfo.id.length ? this._g_oPromoInfo.id : '';
-					sName = this._g_oPromoInfo.name.length ? this._g_oPromoInfo.name : '';
-					_sendGaEventWithoutInteraction('EEC', 'click_promo', _g_sPrefixPromoClicked+'_'+sId+'_'+sName, 0);
-				}
-			}
 		}
 		delete oSingleProductGa4;
-		delete oSingleProductUa;
 	},
 	_isInViewport: function(el)
 	{   // this method is for gaectkList.patchImpression()
@@ -931,21 +676,6 @@ var gaectkList =
 		{
 			var aProduct = [];
 			var nCnt = this._g_aProductInfo.length;
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				for(var i = 0; i < nCnt; i++)
-				{
-					oSingleProduct = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-					aProduct.push(oSingleProduct); // attrs should be id, name, list, brand, category, variant, position, price
-				}
-				_triggerDataLayer('eec.impressionView', {actionField: {list: this._g_sListTitle}, impressions: aProduct});
-				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
-				{
-					sId = this._g_oPromoInfo.id.length ? this._g_oPromoInfo.id : '';
-					sName = this._g_oPromoInfo.name.length ? this._g_oPromoInfo.name : '';
-					_triggerDataLayer('eec.promotionView', {actionField: {promo_title: _g_sPrefixAddImpPromo+'_'+sId+'_'+sName}, promoView: {promotions: [this._g_oPromoInfo]}});
-				}
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
@@ -1019,23 +749,6 @@ var gaectkList =
 				}
 				delete aProduct;
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				for(var i = 0; i < nLength; i++)
-				{
-					oSingleProduct = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-					ga('ec:addImpression', oSingleProduct);
-					if((i > 0 && i % nItemChunk == 0) || i == nPushForceCnt)
-						_sendGaEventWithoutInteraction('EEC', 'add_imp', _g_sPrefixAddImpression+'_item_chunk_'+String(nItemChunk), 0);
-				}
-				if(this._g_oPromoInfo.id.length || this._g_oPromoInfo.name.length)
-				{
-					ga('ec:addPromo', this._g_oPromoInfo);
-					sId = this._g_oPromoInfo.id.length ? this._g_oPromoInfo.id : '';
-					sName = this._g_oPromoInfo.name.length ? this._g_oPromoInfo.name : '';
-					_sendGaEventWithoutInteraction('EEC', 'add_imp_promo', _g_sPrefixAddImpPromo+'_'+sId+'_'+sName, 0);
-				}
-			}
 		}
 		this._g_bImpressionPatched = true;
 		return true;
@@ -1049,11 +762,6 @@ var gaectkDetail =
 	_g_bFacebookConvLoaded: false,
 	init : function()
 	{
-		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
-		{
-			_g_bEcRequired = true;
-			ga('require', 'ec');
-		}
 		if(typeof(fbq) != 'undefined' && fbq != null) 
 			this._g_bFacebookConvLoaded = true;
 		return true;
@@ -1071,16 +779,8 @@ var gaectkDetail =
 		var sListTitle = oSingleProductGa4.item_list_name;
 		var nItemPrice = oSingleProductGa4.price;
 
-		oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[0].item_id);
-		delete oSingleProductUa.list;
-		delete oSingleProductUa.position;
-		delete oSingleProductUa.price;
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.detail', {detail: {actionField: {list: sListTitle}, products: [oSingleProductUa]}});
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('view_item', {items:[oSingleProductGa4]});
@@ -1097,18 +797,8 @@ var gaectkDetail =
 					});
 				console.log('event - view_item - GAv4')
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				ga('ec:addProduct', oSingleProductUa);
-				ga('ec:setAction', 'detail'); // Detail action.
-				// Send data using an event.
-				var sEventLbl = _g_sPrefixViewDetail + '_' + oSingleProductUa.id+'_'+oSingleProductUa.name;
-				_sendGaEventWithoutInteraction('EEC', 'view_detail', sEventLbl, nItemPrice);
-				console.log('event - view_item - UA');
-			}
 		}
 		delete oSingleProductGa4;
-		delete oSingleProductUa;
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendViewContent();
 		return true;
@@ -1124,23 +814,8 @@ var gaectkDetail =
 		var nTotalPrice = nTotalQuantity * oSingleProductGa4.price;
 		var sEventLbl = _g_sPrefixBuyNow + '_' + oSingleProductGa4.item_id + '_' + oSingleProductGa4.item_name;
 
-		oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[0].item_id);
-		delete oSingleProductUa.list;
-		delete oSingleProductUa.position;
-		oSingleProductUa.quantity = nTotalQuantity;
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.checkout', {
-						checkout: {
-							actionField: {step: 1, option: this._g_sOptionDetailPage},
-							products: [oSingleProductUa]  // attrs should be id, name, category, brand, variant, price, quantity
-						}
-					},
-					{sv_event_lbl: sEventLbl, sv_event_val: nTotalPrice}
-				);
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('begin_checkout', {items:[oSingleProductGa4], value: nTotalPrice});
@@ -1160,18 +835,8 @@ var gaectkDetail =
 				gtag('event', sEventLbl);
 				console.log('event - buy now - GAv4')
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				// trigger add to cart for shopping behavior report?
-				ga('ec:addProduct', oSingleProductUa); // attrs should be id, name, category, brand, variant, price, quantity
-				_sendCheckoutAction(1, this._g_sOptionDetailPage);
-				// Send data using an event.
-				_sendGaEventWithoutInteraction('EEC', 'checkout_step_1', _g_sPrefixBuyNow, nTotalPrice); // Send data using an event after set ec-action
-				console.log('event - begin_checkout selected - UA')
-			}
 		}
 		delete oSingleProductGa4;
-		delete oSingleProductUa;
 		if( this._g_bFacebookConvLoaded )
 			this._fbSendCheckoutInitiation();
 		return true;
@@ -1184,25 +849,9 @@ var gaectkDetail =
 		var nEventValue = nTotalQuantity * oSingleProductGa4.price / 2;  // discount event value, not sure to buy
 		var sListTitle = oSingleProductGa4.item_list_name;
 		var sEventLbl = _g_sPrefixAddToCart + '_' + oSingleProductGa4.item_id + '_' + oSingleProductGa4.item_name;
-		
-		oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[0].item_id);
-		oSingleProductUa.quantity = nTotalQuantity;
-		delete oSingleProductUa.list;
-		delete oSingleProductUa.position;
 
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.add', {
-						add: {
-							actionField: {list: sListTitle},
-							products: [oSingleProductUa]  // attrs should be id, name, category, brand, variant, price, quantity
-						}
-					},
-					{sv_event_lbl: sEventLbl, sv_event_val: nEventValue}
-				);
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('add_to_cart', {items:[oSingleProductGa4], value: nEventValue});
@@ -1220,17 +869,8 @@ var gaectkDetail =
 				});
 				console.log('event - add_to_cart - GAv4')
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				ga('ec:addProduct', oSingleProductUa);
-				ga('ec:setAction', 'add');
-				// Send data using an event.
-				_sendGaEventWithoutInteraction( 'EEC', 'add_cart', sEventLbl, nEventValue);
-				console.log('event - add_to_cart - UA')
-			}
 		}
 		delete oSingleProductGa4;
-		delete oSingleProductUa;
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendItemsToCart();
 		return true;
@@ -1270,11 +910,6 @@ var gaectkCart =
 	_g_sCoupon: false,
 	init : function()
 	{
-		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
-		{
-			_g_bEcRequired = true;
-			ga('require', 'ec');
-		}
 		if(typeof(fbq) != 'undefined' && fbq != null)
 			this._g_bFacebookConvLoaded = true;
 		return true;
@@ -1309,10 +944,6 @@ var gaectkCart =
 		var sEventLbl = _g_sPrefixViewCart + '_item_cnt_' + String(this._g_aProductInfo.length);
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.viewCart', {}, {sv_event_lbl: sEventLbl, sv_event_val: nTotalPrice});
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('view_cart', {items:aCartItem});
@@ -1328,11 +959,6 @@ var gaectkCart =
 					items: aCartItem  // warning! bytes limit
 					});
 				console.log('event - view_cart - GAv4');
-			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				_sendGaEventWithoutInteraction( 'EEC', 'view_cart', sEventLbl, nTotalPrice);
-				console.log('event - view_cart - UA')
 			}
 		}
 		delete aCartItem;
@@ -1357,7 +983,6 @@ var gaectkCart =
 		}
 		var nTotalPrice = 0;
 		var aCartToCheckoutGa4 = [];
-		var aCartToCheckoutUa = [];
 		var nStackedCartElement = this._g_aProductInfo.length;
 		var nSelectedCartElement = 0;
 		for(var i = 0; i < nStackedCartElement; i++)
@@ -1370,17 +995,9 @@ var gaectkCart =
 					oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
 					oSingleProductGa4.quantity = this._g_aProductInfo[i].quantity;
 					aCartToCheckoutGa4.push(oSingleProductGa4);
-					
-					oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-					delete oSingleProductUa.list;
-					delete oSingleProductUa.position;
-					oSingleProductUa.quantity = this._g_aProductInfo[i].quantity;
-					aCartToCheckoutUa.push(oSingleProductUa);
-
 					aCartSrl.shift();
 					nTotalPrice += oSingleProductGa4.price * this._g_aProductInfo[i].quantity;
 					delete oSingleProductGa4;
-					delete oSingleProductUa;
 				}
 			}
 		}
@@ -1388,17 +1005,6 @@ var gaectkCart =
 			return false;
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.checkout', {
-						checkout: {
-							actionField: {step: 1, option: this._g_sOptionCartPage},
-							products: aCartToCheckoutUa // attrs should be id, name, category, brand, variant, price, quantity
-						}
-					},
-					{sv_event_val: nTotalPrice}
-				);
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('begin_checkout', {items: aCartToCheckoutGa4});
@@ -1416,20 +1022,8 @@ var gaectkCart =
 					});
 				console.log('event - begin_checkout selected - GAv4')
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				for(var i = 0; i < aCartToCheckoutUa.length; i++)
-				{
-					ga('ec:addProduct', aCartToCheckoutUa[i]); // attrs should be id, name, category, brand, variant, price, quantity
-				}
-				_sendCheckoutAction(1, this._g_sOptionCartPage);
-				// Send data using an event.
-				_sendGaEventWithoutInteraction('EEC', 'checkout_step_1', _g_sPrefixCheckoutSelected, nTotalPrice); // Send data using an event after set ec-action
-				console.log('event - begin_checkout selected - UA')
-			}
 		}
 		delete aCartToCheckoutGa4;
-		delete aCartToCheckoutUa;
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendCheckoutInitiation();
 	},
@@ -1441,39 +1035,19 @@ var gaectkCart =
 
 		var nTotalPrice = 0;
 		var aCartToCheckoutGa4 = [];
-		var aCartToCheckoutUa = [];
 		for(var i = 0; i < nElement; i++)
 		{
 			oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
 			oSingleProductGa4.quantity = this._g_aProductInfo[i].quantity;
 			aCartToCheckoutGa4.push(oSingleProductGa4);
-			
-			oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-			delete oSingleProductUa.list;
-			delete oSingleProductUa.position;
-			oSingleProductUa.quantity = this._g_aProductInfo[i].quantity;
-			aCartToCheckoutUa.push(oSingleProductUa); // attrs should be id, name, category, brand, variant, price, quantity
-
 			nTotalPrice += oSingleProductGa4.price * this._g_aProductInfo[i].quantity;
 			delete oSingleProductGa4;
-			delete oSingleProductUa;
 		}
 		if(!nTotalPrice)
 			return false;
 
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.checkout', {
-						checkout: {
-							actionField: {step: 1, option: this._g_sOptionCartPage},
-							products: aCartToCheckoutUa // attrs should be id, name, category, brand, variant, price, quantity
-						}
-					},
-					{sv_event_val: nTotalPrice}
-				);
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('begin_checkout', {items: aCartToCheckoutGa4});
@@ -1491,20 +1065,8 @@ var gaectkCart =
 					});
 				console.log('event - begin_checkout all - GAv4')
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				for(var i = 0; i < nElement; i++)
-				{
-					ga('ec:addProduct', aCartToCheckoutUa[i]); // attrs should be id, name, category, brand, variant, price, quantity
-				}
-				_sendCheckoutAction(1, this._g_sOptionCartPage);
-				// Send data using an event.
-				_sendGaEventWithoutInteraction('EEC', 'checkout_step_1', _g_sPrefixCheckoutAll, nTotalPrice); // Send data using an event after set ec-action
-				console.log('event - begin_checkout all - UA');
-			}
 		}
 		delete aCartToCheckoutGa4;
-		delete aCartToCheckoutUa;
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendCheckoutInitiation();
 	},
@@ -1516,39 +1078,20 @@ var gaectkCart =
 
 		var nTotalPrice = 0;
 		var aCartToCheckoutGa4 = [];
-		var aCartToCheckoutUa = [];
 		for(var i = 0; i < nElement; i++)
 		{
 			oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
 			oSingleProductGa4.quantity = this._g_aProductInfo[i].quantity;
 			aCartToCheckoutGa4.push(oSingleProductGa4);
 			
-			oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-			delete oSingleProductUa.list;
-			delete oSingleProductUa.position;
-			oSingleProductUa.quantity = this._g_aProductInfo[i].quantity;
-			aCartToCheckoutUa.push(oSingleProductUa); // attrs should be id, name, category, brand, variant, price, quantity
-
 			nTotalPrice += oSingleProductGa4.price * this._g_aProductInfo[i].quantity;
 			delete oSingleProductGa4;
-			delete oSingleProductUa;
 		}
 		if(!nTotalPrice)
 			return false;
 
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.remove', {
-						remove: {
-							actionField: {list: this._g_sOptionCartPage},
-							products: aCartToCheckoutUa
-						}
-					},
-					{sv_event_val: nTotalPrice}
-				);
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('remove_from_cart', {items:aCartToCheckoutGa4});
@@ -1565,20 +1108,8 @@ var gaectkCart =
 					});
 				console.log('event - remove_from_cart all - GAv4');
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				for( var i = 0; i < nElement; i++ )
-				{
-					ga('ec:addProduct', aCartToCheckoutUa[i]); // attrs should be id, name, category, brand, variant, price, quantity
-				}
-				ga('ec:setAction', 'remove');
-				// Send data using an event after set ec-action  // minus value for UA event value only
-				_sendGaEventWithoutInteraction( 'EEC', 'remove_cart', _g_sPrefixRemoveFromCart + '_item_cnt_' + String(nElement), -nTotalPrice);
-				console.log('event - remove_from_cart all - UA');
-			}
 		}
 		delete aCartToCheckoutGa4;
-		delete aCartToCheckoutUa;
 	},
 	removeSelected : function(aTmpCartSrl)
 	{
@@ -1599,7 +1130,6 @@ var gaectkCart =
 		}
 		var nTotalPrice = 0;
 		var aCartToRemoveGa4 = [];
-		var aCartToRemoveUa = [];
 		var nStackedCartElement = this._g_aProductInfo.length;
 		var nSelectedCartElement = 0;
 		for(var i = 0; i < nStackedCartElement; i++)
@@ -1612,17 +1142,10 @@ var gaectkCart =
 					oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
 					oSingleProductGa4.quantity = this._g_aProductInfo[i].quantity;
 					aCartToRemoveGa4.push(oSingleProductGa4);
-					
-					oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-					delete oSingleProductUa.list;
-					delete oSingleProductUa.position;
-					oSingleProductUa.quantity = this._g_aProductInfo[i].quantity;
-					aCartToRemoveUa.push(oSingleProductUa);
 
 					aCartSrl.shift();
 					nTotalPrice += oSingleProductGa4.price * this._g_aProductInfo[i].quantity;
 					delete oSingleProductGa4;
-					delete oSingleProductUa;
 				}
 			}
 		}
@@ -1633,17 +1156,6 @@ var gaectkCart =
 		}
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.remove', {
-						remove: {
-							actionField: {list: this._g_sOptionCartPage},
-							products: aCartToRemoveUa
-						}
-					},
-					{sv_event_val: nTotalPrice}
-				);
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('remove_from_cart', {items:aCartToRemoveGa4});
@@ -1660,20 +1172,8 @@ var gaectkCart =
 					});
 				console.log('event - remove_from_cart selected - GAv4')
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				for(var i = 0; i < aCartToRemoveUa.length; i++)
-				{
-					ga('ec:addProduct', aCartToRemoveUa[i]);
-				}
-				ga('ec:setAction', 'remove');
-				// Send data using an event.   // minus value for UA event value only
-				_sendGaEventWithoutInteraction('EEC', 'remove_cart', _g_sPrefixRemoveFromCart + '_item_cnt_' + String(aCartToRemoveUa.length), -nTotalPrice);
-				console.log('event - remove_from_cart selected - UA');
-			}
 		}
 		delete aCartToRemoveGa4;
-		delete aCartToRemoveUa;
 	},
 	_fbSendCheckoutInitiation : function() 
 	{
@@ -1688,11 +1188,6 @@ var gaectkSettlement =
 	_g_sOptionSettlementPage: 'order page',
 	init : function()
 	{
-		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
-		{
-			_g_bEcRequired = true;
-			ga('require', 'ec');
-		}
 		if(typeof(fbq) != 'undefined' && fbq != null) 
 			this._g_bFacebookConvLoaded = true;
 
@@ -1712,42 +1207,17 @@ var gaectkSettlement =
 
 		var nTotalPrice = 0;
 		var aProductToCheckoutGa4 = [];
-		var aProductToCheckoutUa = [];
 		for(var i = 0; i < nElement; i++)
 		{
 			oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
 			oSingleProductGa4.quantity = this._g_aProductInfo[i].quantity;
 			aProductToCheckoutGa4.push(oSingleProductGa4);
-			
-			oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-			delete oSingleProductUa.list;
-			delete oSingleProductUa.position;
-			oSingleProductUa.quantity = this._g_aProductInfo[i].quantity;
-			aProductToCheckoutUa.push(oSingleProductUa); // attrs should be id, name, category, brand, variant, price, quantity
-
 			nTotalPrice += oSingleProductGa4.price * this._g_aProductInfo[i].quantity;  // plus value
 		}
 		if(!nTotalPrice)
 			return false;
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.checkout', {
-						checkout: {
-							actionField: {
-								step: 2, // 1, the first step already started from cart page
-								option: this._g_sOptionSettlementPage
-							},
-							products: aProductToCheckoutUa
-						}
-					},
-					{
-						sv_event_lbl: _g_sPrefixSettlement + '_option_' + this._g_sOptionSettlementPage, 
-						sv_event_val: nTotalPrice
-					}
-				);
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('add_shipping_info', {shipping_tier: 'Ground', items:aProductToCheckoutGa4});
@@ -1774,39 +1244,8 @@ var gaectkSettlement =
 				});
 				console.log('event - add_shipping_info add_payment_info - GAv4')
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				for(var i = 0; i < nElement; i++)
-				{
-					ga('ec:addProduct', aProductToCheckoutUa[i]);
-				}
-				if(nStepNumber === undefined)
-					nStepNumber = null;
-				else if(nStepNumber.length == 0)
-					nStepNumber = null;
-
-				if(sOption === undefined)
-					sOption = null;
-				else if(sOption.length == 0)
-					sOption = null;
-				
-				if(nStepNumber == null && sOption == null)
-				{
-					nStepNumber = 2;
-					_sendCheckoutAction(nStepNumber, this._g_sOptionSettlementPage); // 1, the first step already started from cart page
-					console.log('event - settlement start page - UA');
-					gaectkStorage.saveData('cookie', _g_sSettledItemListCN, this._g_aProductInfo, nStepNumber);  // expire in 2 hrs
-				}
-				else if(nStepNumber != null && sOption == null)
-					_sendCheckoutAction(nStepNumber);
-				else if(nStepNumber != null && sOption != null)
-					_sendCheckoutAction(nStepNumber, sOption);
-				// Send data using an event after set ec-action
-				_sendGaEventWithoutInteraction('EEC', 'checkout_step_'+String(nStepNumber), _g_sPrefixSettlement + '_option_' + this._g_sOptionSettlementPage, nTotalPrice); 
-			}
 		}
 		delete aProductToCheckoutGa4;
-		delete aProductToCheckoutUa;
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendPaymentInfoAddition();
 	},
@@ -1823,11 +1262,6 @@ var gaectkPurchase =
 	_g_bFacebookConvLoaded : false,
 	init : function()
 	{
-		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
-		{
-			_g_bEcRequired = true;
-			ga('require', 'ec');
-		}
 		if(typeof(fbq) != 'undefined' && fbq != null) 
 			this._g_bFacebookConvLoaded = true;
 		return true;
@@ -1859,7 +1293,6 @@ var gaectkPurchase =
 
 		var nTotalPrice = 0;
 		var aProductToCheckoutGa4 = [];
-		var aProductToCheckoutUa = [];
 		for(var i = 0; i < nElement; i++)
 		{
 			oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', aProductInfo[i].item_id);
@@ -1867,13 +1300,6 @@ var gaectkPurchase =
 			oSingleProductGa4.coupon = aProductInfo[i].coupon;
 			aProductToCheckoutGa4.push(oSingleProductGa4);
 			
-			oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', aProductInfo[i].item_id);
-			delete oSingleProductUa.list;
-			delete oSingleProductUa.position;
-			oSingleProductUa.quantity = aProductInfo[i].quantity;
-			oSingleProductUa.coupon = aProductInfo[i].coupon;
-			aProductToCheckoutUa.push(oSingleProductUa); // attrs should be id, name, category, brand, variant, price, quantity
-
 			nTotalPrice += oSingleProductGa4.price * aProductInfo[i].quantity;  // plus value
 		}
 		if(!nTotalPrice)
@@ -1881,24 +1307,6 @@ var gaectkPurchase =
 
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.purchase', {
-						currencyCode: _g_sCurrency,
-						purchase: {
-							actionField: {
-								id: nOrderSrl,
-								affiliation: _g_sAffiliation,
-								revenue: nRevenue,
-								tax: nTaxAmnt,
-								shipping: nShippingCost,
-								coupon: sCoupon
-							},
-							products: aProductToCheckoutUa
-						}
-					}
-				);
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('purchase', {
@@ -1929,24 +1337,6 @@ var gaectkPurchase =
 				});
 				console.log('event - purchase - GAv4');
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				for(var i = 0; i < nElement; i++)
-				{
-					ga('ec:addProduct', aProductToCheckoutUa[i]);
-				}
-				ga('ec:setAction', 'purchase', { // Transaction details are provided in an actionFieldObject.
-					id: nOrderSrl,             // (Required) Transaction id (string).
-					affiliation: sAffiliation, // Affiliation (string).
-					revenue: nRevenue,         // Revenue (currency).
-					tax: nTaxAmnt,             // Tax (currency).
-					shipping: nShippingCost,   // Shipping (currency).
-					coupon: sCoupon            // Transaction coupon (string).
-				});
-				// Send data using an event after set ec-action
-				_sendGaEventWithoutInteraction('EEC', 'purchase', 'OrderID:'+nOrderSrl, nRevenue);
-				console.log('event - purchase - UA');
-			}
 		}
 		if(this._g_bFacebookConvLoaded)
 			this._fbSendPurchaseComplete(nRevenue);
@@ -1968,11 +1358,6 @@ var gaectkMypage =
 	_g_aProductInfo : [],
 	init : function()
 	{
-		if(_g_bUaPropertyLoaded && !_g_bEcRequired)
-		{
-			_g_bEcRequired = true;
-			ga('require', 'ec');
-		}
 		return true;
 	},
 	queueItemInfo : function(nItemSrl, sItemName, sCategory, sBrand, sVariant, nItemPrice, nTotalQuantity)
@@ -1987,25 +1372,12 @@ var gaectkMypage =
 		var nElement = this._g_aProductInfo.length;
 
 		var aProductToRefundGa4 = [];
-		var aProductToRefundUa = [];
 		for(var i = 0; i < nElement; i++)
 		{
 			oSingleProductGa4 = gaectkItems.getItemInfoBySrl('GA4', this._g_aProductInfo[i].item_id);
 			oSingleProductGa4.quantity = this._g_aProductInfo[i].quantity;
 			oSingleProductGa4.coupon = this._g_aProductInfo[i].coupon;
 			aProductToRefundGa4.push(oSingleProductGa4);
-			
-			oSingleProductUa = gaectkItems.getItemInfoBySrl('UA', this._g_aProductInfo[i].item_id);
-			delete oSingleProductUa.brand;
-			delete oSingleProductUa.category;
-			delete oSingleProductUa.coupon;
-			delete oSingleProductUa.name;
-			delete oSingleProductUa.price;
-			delete oSingleProductUa.variant;
-			delete oSingleProductUa.list;
-			delete oSingleProductUa.position;
-			oSingleProductUa.quantity = this._g_aProductInfo[i].quantity;
-			aProductToRefundUa.push(oSingleProductUa); // attrs should be id, name, category, brand, variant, price, quantity
 
 			nRefundedAmnt += oSingleProductGa4.price * this._g_aProductInfo[i].quantity;  // plus value
 		}
@@ -2014,10 +1386,6 @@ var gaectkMypage =
 
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
-			if(_g_bGtmUaActivated) // GTM trigger UA
-			{
-				_triggerDataLayer('eec.refund', {refund: {actionField: {id: nOrderSrl}}, products: aProductToRefundUa});
-			}
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
 			{
 				_triggerDataLayer('refund', {transaction_id: nOrderSrl});
@@ -2039,21 +1407,8 @@ var gaectkMypage =
 				  });
 				console.log('event - refund - GAv4')
 			}
-			if(_g_bUaPropertyLoaded)  // UA
-			{
-				var nLength = this._g_aProductInfo.length;
-				for(var i = 0; i < nLength; i++)
-				{
-					ga('ec:addProduct', aProductToRefundUa[i]); // Add a single product to refund
-				}
-				ga('ec:setAction', 'refund', {
-					'id': nOrderSrl // Transaction ID is only required field for full refund.
-				});
-				_sendGaEventWithoutInteraction('EEC', 'refund', _g_sPrefixRefunded + '_item_cnt_' + String(nLength), -nRefundedAmnt); // minus value for UA event value only
-			}
 		}
 		delete aProductToRefundGa4;
-		delete aProductToRefundUa;
 	}
 }
 
