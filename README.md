@@ -26,7 +26,7 @@ gaectk는 2015년부터 개발을 시작하여 다수의 성공적인 프로젝�
 
 2021년 7월부터 Google Analytics 4 for web용 Enhanced Ecommerce snippet code 태스트를 시작했습니다.
 
-웹페이지에 코드를 적용하는 즉시 데이터 수집이 시작되며, 오차없이 작동하는지 검토할 필요가 없습니다.
+웹페이지에 코드를 적용하는 즉시 데이터 수집이 시작되며, 오류 가능성을 검토할 필요가 없습니다.
 
 ### 단순성
 
@@ -34,7 +34,7 @@ Google Analytics 4 for web 전문가라고 자신을 소개하는 외부 조직�
 
 왜냐하면 정형화된 적용 절차를 확립했다면, 2일 이상이 필요하지 않기 때문입니다. 다만, 의뢰인의 웹페이지에 코드를 설치할 수 없는 복잡한 사정이 있다면, 빠르게 거절할 수는 있습니다.
 
-gaectk JS 라이브러리는 vanila Java Script라서 웹사이트에 팝업창을 띄우고 HTML 스킨 코드를 수정할 수 있다면 설치할 수 있습니다.
+gaectk JS 라이브러리는 vanila Java Script라서 웹사이트의 스킨 코드를 수정할 수 있다면 설치할 수 있습니다.
 
 더하여, 전자상거래를 위한 웹페이지는 UI 관련 코드만으로도 충분히 복잡합니다. 
 
@@ -58,4 +58,5 @@ singleview.co.kr은 여러분들의 개발 참여를 기다립니다.
 한국의 Google Analytics 4 for web 활용 수준을 향상시키고 싶은 분들의 참여를 환영합니다.
 
 ## Support
-* Official site (Korean) : http://singleview.co.kr/
+* Official site without GTM(Korean) : http://singleview.co.kr/gaectk_howto_basic
+* Official site with GTM(Korean) : http://singleview.co.kr/blog/19485

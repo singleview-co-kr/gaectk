@@ -5,7 +5,6 @@
 var _g_sGaectkVersion = '1.5.5';
 var _g_sGaectkVersionDate = '2023-10-24';
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
-var _g_sGa4DatastreamId = null;
 var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
 var _g_bGtmGa4Activated = false; // GTM trigger GA4
 var 
@@ -68,7 +67,7 @@ function _sendGaEventWithInteraction(sEventCategory, sEventAction, sEventLabel, 
 	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		return true;
 	// JS API mode
-	if(_g_bGa4DatastreamIdLoaded)  // GAv4
+	if(_g_bGa4DatastreamIdLoaded)  // GA4
 	{
 		sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
 		gtag('event', sCustomEventLbl , {
@@ -96,7 +95,7 @@ function _sendGaEventWithoutInteraction(sEventCategory, sEventAction, sEventLabe
 		console.log('_sendGaEventWithoutInteraction denied: sEventAction is required!'); 
 		return false;
 	}
-	// GAv4
+	// GA4
 	if(_g_bGa4DatastreamIdLoaded)  
 	{
 		sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
@@ -296,7 +295,7 @@ var gaectkItems =
 	register: function(nItemSrl, sItemName, nPosition, sBrand, sCategory, sVariant, sListName, nPrice, sCoupon)  //, sPromotionId, sPromotionName, sCreativeName)
 	{
 		sItemSrl = String(nItemSrl);
-		// UA would be deprecated someday hence this construction is GAv4 biased
+		// UA would be deprecated someday hence this construction is GA4 biased
 		if(this._g_aProductDetailInfo[sItemSrl] === undefined) // register
 		{
 			this._g_aProductDetailInfo[sItemSrl] = {
@@ -439,7 +438,8 @@ var gaectkHeader =
 				if(window.dataLayer)  // https://stackoverflow.com/questions/55852511/how-to-check-if-a-google-tag-is-already-loaded-on-an-html-page
 				{
 					_g_bGtmIdLoaded = true;
-					console.log('GTM activated');
+					_g_bGtmGa4Activated = true;
+					console.log('GTMGA4 activated')
 					// if GTM has loaded: https://www.simoahava.com/analytics/notify-page-google-tag-manager-loaded/
 				}
 				else
@@ -447,24 +447,20 @@ var gaectkHeader =
 					console.log('Warning! You activated GTM without proper initialization.');
 				}
 			}
-			if(sTrackingId == 'GTMGA4') // string GTMGA4
-			{
-				_g_bGtmGa4Activated = true;
-				console.log('GTMGA4 activated')
-			}
 			if(sTrackingId.search(/^G-/gm) == 0) // string like 'G-XXXXXXXXXX'
 			{
 				if(typeof gtag === 'function')
 				{
 					_g_bGa4DatastreamIdLoaded = true;
-					_g_sGa4DatastreamId = sTrackingId;
 					console.log('GA4 activated');
 				}
 				else
 				{
-					console.log('Warning! You activated GAv4 without proper initialization.');
+					console.log('Warning! You activated GA4 without proper initialization.');
 				}
 			}
+			if(sTrackingId == 'GTMGA4' || sTrackingId == 'GTMUA' )
+				continue;  // ignore deprecated command
 		}
 		if(!_g_bGtmIdLoaded && !_g_bGa4DatastreamIdLoaded)
 		{
@@ -627,7 +623,7 @@ var gaectkList =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
 				{
@@ -708,7 +704,7 @@ var gaectkList =
 			var nLength = this._g_aProductInfo.length;
 			var nPushForceCnt = nLength - 1;
 			var aProduct = [];
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				if(!this._g_oPromoInfo.id.length && !this._g_oPromoInfo.name.length)
 				{
@@ -788,14 +784,14 @@ var gaectkDetail =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'view_item', {
 					currency: _g_sCurrency,
 					value: oSingleProductGa4.price,
 					items: [oSingleProductGa4]
 					});
-				console.log('event - view_item - GAv4')
+				console.log('event - view_item - GA4')
 			}
 		}
 		delete oSingleProductGa4;
@@ -823,7 +819,7 @@ var gaectkDetail =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'begin_checkout', {
 					currency: _g_sCurrency,
@@ -831,9 +827,9 @@ var gaectkDetail =
 					//coupon: this._g_sCoupon,
 					items: [oSingleProductGa4]
 					});
-				console.log('event - begin_checkout selected - GAv4')
+				console.log('event - begin_checkout selected - GA4')
 				gtag('event', sEventLbl);
-				console.log('event - buy now - GAv4')
+				console.log('event - buy now - GA4')
 			}
 		}
 		delete oSingleProductGa4;
@@ -859,7 +855,7 @@ var gaectkDetail =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				this._g_aProductInfo[0].quantity = nTotalQuantity;
 				gtag('event', 'add_to_cart', {
@@ -867,7 +863,7 @@ var gaectkDetail =
 					value: nEventValue, // nTotalPrice / 2,  
 					items: [oSingleProductGa4]  //this._g_aProductInfo
 				});
-				console.log('event - add_to_cart - GAv4')
+				console.log('event - add_to_cart - GA4')
 			}
 		}
 		delete oSingleProductGa4;
@@ -924,7 +920,7 @@ var gaectkCart =
 								});
 		return true;
 	},
-	viewCart : function()  // this method is for GAv4 only
+	viewCart : function()  // this method is for GA4 only
 	{
 		var nElement = this._g_aProductInfo.length;
 		if(nElement < 0)
@@ -951,14 +947,14 @@ var gaectkCart =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'view_cart', {
 					currency: _g_sCurrency,
 					value: nTotalPrice,
 					items: aCartItem  // warning! bytes limit
 					});
-				console.log('event - view_cart - GAv4');
+				console.log('event - view_cart - GA4');
 			}
 		}
 		delete aCartItem;
@@ -1012,7 +1008,7 @@ var gaectkCart =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'begin_checkout', {
 					currency: _g_sCurrency,
@@ -1020,7 +1016,7 @@ var gaectkCart =
 					coupon: this._g_sCoupon,
 					items: aCartToCheckoutGa4
 					});
-				console.log('event - begin_checkout selected - GAv4')
+				console.log('event - begin_checkout selected - GA4')
 			}
 		}
 		delete aCartToCheckoutGa4;
@@ -1055,7 +1051,7 @@ var gaectkCart =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'begin_checkout', {
 					currency: _g_sCurrency,
@@ -1063,7 +1059,7 @@ var gaectkCart =
 					coupon: this._g_sCoupon,
 					items: aCartToCheckoutGa4
 					});
-				console.log('event - begin_checkout all - GAv4')
+				console.log('event - begin_checkout all - GA4')
 			}
 		}
 		delete aCartToCheckoutGa4;
@@ -1099,14 +1095,14 @@ var gaectkCart =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'remove_from_cart', {
 					currency: _g_sCurrency,
 					value: nTotalPrice,
 					items: aCartToCheckoutGa4
 					});
-				console.log('event - remove_from_cart all - GAv4');
+				console.log('event - remove_from_cart all - GA4');
 			}
 		}
 		delete aCartToCheckoutGa4;
@@ -1163,14 +1159,14 @@ var gaectkCart =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'remove_from_cart', {
 					currency: _g_sCurrency,
 					value: nTotalPrice,
 					items: aCartToRemoveGa4
 					});
-				console.log('event - remove_from_cart selected - GAv4')
+				console.log('event - remove_from_cart selected - GA4')
 			}
 		}
 		delete aCartToRemoveGa4;
@@ -1226,7 +1222,7 @@ var gaectkSettlement =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'add_shipping_info', {
 					currency: _g_sCurrency,
@@ -1242,7 +1238,7 @@ var gaectkSettlement =
 					payment_type: 'Internal PG',
 					items: aProductToCheckoutGa4  // this._g_aProductInfo
 				});
-				console.log('event - add_shipping_info add_payment_info - GAv4')
+				console.log('event - add_shipping_info add_payment_info - GA4')
 			}
 		}
 		delete aProductToCheckoutGa4;
@@ -1323,7 +1319,7 @@ var gaectkPurchase =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'purchase', {  // GA v4는 items Array없이 purchase event 전송 불가능
 					currency: _g_sCurrency,
@@ -1335,7 +1331,7 @@ var gaectkPurchase =
 					tax: nTaxAmnt,
 					items: aProductToCheckoutGa4
 				});
-				console.log('event - purchase - GAv4');
+				console.log('event - purchase - GA4');
 			}
 		}
 		if(this._g_bFacebookConvLoaded)
@@ -1393,7 +1389,7 @@ var gaectkMypage =
 		}
 		else  // JS API mode
 		{
-			if(_g_bGa4DatastreamIdLoaded)  // GAv4
+			if(_g_bGa4DatastreamIdLoaded)  // GA4
 			{
 				gtag('event', 'refund', {
 					currency: _g_sCurrency,
@@ -1405,7 +1401,7 @@ var gaectkMypage =
 					//tax: 1.11,
 					items: aProductToRefundGa4
 				  });
-				console.log('event - refund - GAv4')
+				console.log('event - refund - GA4')
 			}
 		}
 		delete aProductToRefundGa4;
