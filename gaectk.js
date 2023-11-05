@@ -8,108 +8,48 @@ var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
 var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
 var _g_bGtmGa4Activated = false; // GTM trigger GA4
 var 
-	_g_sPrefixAddImpression = 'ai',
-	_g_sPrefixItemClicked = 'ic',
-	_g_sPrefixAddImpPromo = 'aip',
-	_g_sPrefixPromoClicked = 'pc',
-	_g_sPrefixViewDetail = 'vd',
 	_g_sPrefixBuyNow = 'bn',
 	_g_sPrefixAddToCart = 'atc',
-	_g_sPrefixViewCart = 'vc',
-	_g_sPrefixRemoveFromCart = 'rfc',
-	_g_sPrefixCheckoutSelected = 'cs',
-	_g_sPrefixCheckoutAll = 'ca',
-	_g_sPrefixSettlement = 'setl',
-	_g_sPrefixRefunded = 'ref';
+	_g_sPrefixViewCart = 'vc';
+//	_g_sPrefixAddImpression = 'ai',
+//	_g_sPrefixItemClicked = 'ic',
+//	_g_sPrefixAddImpPromo = 'aip',
+//	_g_sPrefixPromoClicked = 'pc',
+//	_g_sPrefixViewDetail = 'vd',
+//	_g_sPrefixRemoveFromCart = 'rfc',
+//	_g_sPrefixCheckoutSelected = 'cs',
+//	_g_sPrefixCheckoutAll = 'ca',
+//	_g_sPrefixSettlement = 'setl',
+//	_g_sPrefixRefunded = 'ref';
 
 var _g_sAffiliation = 'myshop';
 var _g_sSecretPassphrase = 'Secret Passphrase';
 var _g_sCurrency = 'KRW';
 var _g_sViewedItemListCN = 'gaectk_viewed_items';
 var _g_sSettledItemListCN = 'gaectk_settled_items';  // CN; cookie name
-var _g_bSentConversionPageView = false;
-var _g_aImageElement = [];
-
-function setUtmParamsGaectk(sSource, sMedium, sCampaign, sKeyword, sContentVariation)
-{
-	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
-	return true;
-}
-
-function checkNonEcConversionGaectk(sVirtualUrl, sPageTitle)
-{
-	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
-	return true;
-}
-
-function checkVisibilityGaectk(elm, eval) 
-{
-	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
-	return true;
-}
 
 function sendDisplayEventGaectk(sDisplayedObject)
 {
-	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
-	return true;
+	if(sDisplayedObject === null || sDisplayedObject === undefined || sDisplayedObject.length == 0)
+		return;
+	_sendGaEventWithoutInteraction(sDisplayedObject);
 }
 
-function sendClickEventGaectk(sCategory, sPageTitle, sLocation, sWindow)
+function _sendGaEventWithoutInteraction(sEventLabel, nEventValue)
 {
-	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
-	return true;
-}
-
-function _sendGaEventWithInteraction(sEventCategory, sEventAction, sEventLabel, nEventValue)
-{
-	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
-	// Send data using an event just after set ec-action
-	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
-		return true;
-	// JS API mode
-	if(_g_bGa4DatastreamIdLoaded)  // GA4
-	{
-		sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
-		gtag('event', sCustomEventLbl , {
-			currency: _g_sCurrency,
-			value: _enforceInt(nEventValue)
-		});
-	}
-}
-
-function _sendGaEventWithoutInteraction(sEventCategory, sEventAction, sEventLabel, nEventValue)
-{
-	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
-		return true;
-	
+	//if(_g_bGtmIdLoaded)  // GTM dataLayer Mode에서 이벤트 전송하는 법 구현해야 함
+	//	return true;
 	// JS API mode
 	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
 	// Send data using an event just after set ec-action
-	if(typeof sEventCategory === 'undefined' || sEventCategory === null || sEventCategory === undefined || sEventCategory.length == 0)
-	{
-		console.log('_sendGaEventWithoutInteraction denied: sEventCategory is required!'); 
-		return false;
-	}
-	if(typeof sEventAction === 'undefined' || sEventAction === null || sEventAction === undefined || sEventAction.length == 0)
-	{
-		console.log('_sendGaEventWithoutInteraction denied: sEventAction is required!'); 
-		return false;
-	}
 	// GA4
 	if(_g_bGa4DatastreamIdLoaded)  
 	{
-		sCustomEventLbl = sEventCategory + '_' + sEventAction + '_' + sEventLabel;
-		gtag('event', sCustomEventLbl , {
+		gtag('event', sEventLabel , {
 			currency: _g_sCurrency,
 			value: _enforceInt(nEventValue)
 		});
 	}
-}
-
-function _sendCheckoutAction(nStepNumber, sOption)
-{
-	console.log('gaeckt.setUtmParamsGaectk will be deprecated!');
-	return true;
 }
 
 function _enforceInt(nEventValue)
@@ -606,7 +546,6 @@ var gaectkList =
 			return false;
 		}
 		oSingleProductGa4.quantity = 1;
-		var sEventLbl = _g_sPrefixItemClicked + '_on_' + this._g_sListTitle +'_pos:' + oSingleProductGa4.index + '_' + oSingleProductGa4.item_id+'_'+oSingleProductGa4.item_name;
 		if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 		{
 			if(_g_bGtmGa4Activated) // GTM trigger GA4
@@ -863,6 +802,7 @@ var gaectkDetail =
 					value: nEventValue, // nTotalPrice / 2,  
 					items: [oSingleProductGa4]  //this._g_aProductInfo
 				});
+				gtag('event', sEventLbl);
 				console.log('event - add_to_cart - GA4')
 			}
 		}
@@ -954,6 +894,7 @@ var gaectkCart =
 					value: nTotalPrice,
 					items: aCartItem  // warning! bytes limit
 					});
+				gtag('event', sEventLbl);
 				console.log('event - view_cart - GA4');
 			}
 		}
