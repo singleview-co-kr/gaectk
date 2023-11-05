@@ -2,8 +2,8 @@
  * Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.5.5';
-var _g_sGaectkVersionDate = '2023-10-24';
+var _g_sGaectkVersion = '1.5.6';
+var _g_sGaectkVersionDate = '2023-11-05';
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
 var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
 var _g_bGtmGa4Activated = false; // GTM trigger GA4
@@ -1195,7 +1195,7 @@ var gaectkSettlement =
 		this._g_aProductInfo.push({item_id: nItemSrl, quantity: _enforceInt(nTotalQuantity)});
 		return true;
 	},
-	patch : function(nStepNumber, sOption)
+	patch : function()
 	{
 		var nElement = this._g_aProductInfo.length;
 		if(nElement < 0)
