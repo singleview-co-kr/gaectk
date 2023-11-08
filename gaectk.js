@@ -2,8 +2,8 @@
  * Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.5.6';
-var _g_sGaectkVersionDate = '2023-11-05';
+var _g_sGaectkVersion = '1.5.7';
+var _g_sGaectkVersionDate = '2023-11-06';
 var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
 var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
 var _g_bGtmGa4Activated = false; // GTM trigger GA4
@@ -27,12 +27,85 @@ var _g_sSecretPassphrase = 'Secret Passphrase';
 var _g_sCurrency = 'KRW';
 var _g_sViewedItemListCN = 'gaectk_viewed_items';
 var _g_sSettledItemListCN = 'gaectk_settled_items';  // CN; cookie name
+var _g_bSentConversionPageView = false;
+
+
+function checkNonEcConversionGaectk(sVirtualUrl, sPageTitle)
+{
+	// GA4 GTM에서도 작동하도록 개선해야 함
+	if(_g_bGa4DatastreamIdLoaded)   // this global method is for UA only
+		return false;
+	if(!_g_bSentConversionPageView)
+	{
+		ga('send', 'pageview', {
+		  'page': sVirtualUrl, // example '/thankyou.html'
+		  'title': sPageTitle
+		});
+		_g_bSentConversionPageView = true;
+	}
+}
+
+function sendClickEventGaectk(sCategory, sPageTitle, sLocation, sWindow)
+{
+	// GA4 GTM에서도 작동하도록 개선해야 함
+	if(_g_bGa4DatastreamIdLoaded)   // this global method is for UA only
+		return false;
+	if(sLocation === null || sLocation === undefined || sLocation.length == 0 || sLocation == '#')
+		sLocation = '#';
+	if(sWindow === null || sWindow === undefined || sWindow.length == 0)
+		sWindow = 'self';
+	if(_g_bGa4DatastreamIdLoaded)
+	{
+		console.log('sendClickEventGaectk denied - use Automatic collected event and Create Event');
+	}
+	if(_g_bUaPropertyLoaded)
+	{
+		_sendGaEventWithInteraction(sCategory, 'clicked', sPageTitle);
+	}
+	if(sLocation != '#')
+	{
+		if(sWindow == 'self')
+			location.href = sLocation;
+		else
+		{
+			window.open(sLocation, sWindow);
+			window.focus();
+		}
+	}
+}
 
 function sendDisplayEventGaectk(sDisplayedObject)
 {
 	if(sDisplayedObject === null || sDisplayedObject === undefined || sDisplayedObject.length == 0)
 		return;
 	_sendGaEventWithoutInteraction(sDisplayedObject);
+}
+
+function _sendGaEventWithInteraction(sEventCategory, sEventAction, sEventLabel, nEventValue)
+{
+	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
+	// Send data using an event just after set ec-action
+	// GA4 GTM에서도 작동하도록 개선해야 함
+	if(_g_bGa4DatastreamIdLoaded)   // this global method is for UA only
+		return false;
+	if(nEventValue === undefined)
+	{
+		ga('send', 'event',  {
+			'eventCategory': sEventCategory,   // Required.
+			'eventAction': sEventAction,      // Required.
+			'eventLabel': sEventLabel
+			});
+	}
+	else
+	{
+		nEventValue = _enforceInt(nEventValue);
+		ga('send', 'event',  {
+			'eventCategory': sEventCategory,   // Required.
+			'eventAction': sEventAction,      // Required.
+			'eventLabel': sEventLabel,
+			'eventValue': nEventValue // use number only, null string '' commits error.
+			});
+	}
 }
 
 function _sendGaEventWithoutInteraction(sEventLabel, nEventValue)
