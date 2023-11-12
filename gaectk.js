@@ -2,12 +2,9 @@
  * Google Analytics 4 Enhance Ecommerce with Google Tag Manager JavaScript Library
  * http://singleview.co.kr/
  */
-var _g_sGaectkVersion = '1.5.7';
-var _g_sGaectkVersionDate = '2023-11-06';
-var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
-var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
-var _g_bGtmGa4Activated = false; // GTM trigger GA4
-var 
+const _g_sGaectkVersion = '1.5.8';
+const _g_sGaectkVersionDate = '2023-11-09';
+const 
 	_g_sPrefixBuyNow = 'bn',
 	_g_sPrefixAddToCart = 'atc',
 	_g_sPrefixViewCart = 'vc';
@@ -22,45 +19,63 @@ var
 //	_g_sPrefixSettlement = 'setl',
 //	_g_sPrefixRefunded = 'ref';
 
-var _g_sAffiliation = 'myshop';
-var _g_sSecretPassphrase = 'Secret Passphrase';
-var _g_sCurrency = 'KRW';
-var _g_sViewedItemListCN = 'gaectk_viewed_items';
-var _g_sSettledItemListCN = 'gaectk_settled_items';  // CN; cookie name
+const _g_sAffiliation = 'myshop';
+const _g_sSecretPassphrase = 'Secret Passphrase';
+const _g_sCurrency = 'KRW';
+const _g_sViewedItemListCN = 'gaectk_viewed_items';
+const _g_sSettledItemListCN = 'gaectk_settled_items';  // CN; cookie name
+const _g_aGa4ReservedEventName = ['view_item_list', 'view_promotion', 'select_item', 'select_promotion', 
+									'view_item', 'begin_checkout', 'add_to_cart', 'view_cart', 'remove_from_cart', 
+									'add_shipping_info', 'add_payment_info', 'purchase', 'refund'];
+var _g_bGa4DatastreamIdLoaded = false; // eg, 'G-XXXXXXXXXX'
+var _g_bGtmIdLoaded = false; // eg, 'GTM-XXXXXXXXXX'
+var _g_bGtmGa4Activated = false; // GTM trigger GA4
 var _g_bSentConversionPageView = false;
-
 
 function checkNonEcConversionGaectk(sVirtualUrl, sPageTitle)
 {
-	// GA4 GTM에서도 작동하도록 개선해야 함
-	if(_g_bGa4DatastreamIdLoaded)   // this global method is for UA only
-		return false;
-	if(!_g_bSentConversionPageView)
+	if(_g_bSentConversionPageView)  // this method can cause double pageview with different title and location
+		return true;
+	let oPvEventInfo = {page_title: sPageTitle, page_location: sVirtualUrl};
+	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 	{
-		ga('send', 'pageview', {
-		  'page': sVirtualUrl, // example '/thankyou.html'
-		  'title': sPageTitle
-		});
-		_g_bSentConversionPageView = true;
+		if(_g_bGtmGa4Activated) // GTM trigger GA4
+		{
+			_triggerDataLayer('virtual_pv', oPvEventInfo);  // warning; 'virtual_pv' has been transmitted to GA4 GTM container
+		}
 	}
+	else  // JS API mode
+	{
+		if(_g_bGa4DatastreamIdLoaded)  // GA4
+		{
+			// refer to https://developers.google.com/analytics/devguides/collection/ga4/views?hl=ko&client_type=gtag
+			gtag('event', 'page_view', oPvEventInfo);  // warning; page_view has been transmitted to GA4 JS API
+			_g_bSentConversionPageView = true;
+		}
+	}
+	delete oPvEventInfo;
 }
 
-function sendClickEventGaectk(sCategory, sPageTitle, sLocation, sWindow)
+function sendClickEventGaectk(sCategory, sEventLbl, sLocation, sWindow)
 {
-	// GA4 GTM에서도 작동하도록 개선해야 함
-	if(_g_bGa4DatastreamIdLoaded)   // this global method is for UA only
-		return false;
 	if(sLocation === null || sLocation === undefined || sLocation.length == 0 || sLocation == '#')
 		sLocation = '#';
 	if(sWindow === null || sWindow === undefined || sWindow.length == 0)
 		sWindow = 'self';
-	if(_g_bGa4DatastreamIdLoaded)
+	let oEventInfo = {label: sCategory + '_' + sEventLbl, value: 0, currency: _g_sCurrency};
+	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 	{
-		console.log('sendClickEventGaectk denied - use Automatic collected event and Create Event');
+		if(_g_bGtmGa4Activated) // GTM trigger GA4
+		{
+			_triggerDataLayer('clicked', oEventInfo);  // warning; 'clicked' has been transmitted to GA4 GTM container
+		}
 	}
-	if(_g_bUaPropertyLoaded)
+	else  // JS API mode
 	{
-		_sendGaEventWithInteraction(sCategory, 'clicked', sPageTitle);
+		if(_g_bGa4DatastreamIdLoaded)  // GA4
+		{
+			gtag('event', oEventInfo.label, oEventInfo);  // warning; oEventInfo.label has been transmitted to GA4 JS API
+		}
 	}
 	if(sLocation != '#')
 	{
@@ -78,50 +93,27 @@ function sendDisplayEventGaectk(sDisplayedObject)
 {
 	if(sDisplayedObject === null || sDisplayedObject === undefined || sDisplayedObject.length == 0)
 		return;
-	_sendGaEventWithoutInteraction(sDisplayedObject);
+	_sendGaEventWithoutInteraction('displayed', sDisplayedObject);
 }
 
-function _sendGaEventWithInteraction(sEventCategory, sEventAction, sEventLabel, nEventValue)
+function _sendGaEventWithoutInteraction(sEventName, sEventLabel, nEventValue)
 {
 	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
 	// Send data using an event just after set ec-action
-	// GA4 GTM에서도 작동하도록 개선해야 함
-	if(_g_bGa4DatastreamIdLoaded)   // this global method is for UA only
-		return false;
-	if(nEventValue === undefined)
+	let oEventInfo = {label: sEventLabel, value: _enforceInt(nEventValue), currency: _g_sCurrency};
+	if(_g_bGtmIdLoaded)  // GTM dataLayer Mode
 	{
-		ga('send', 'event',  {
-			'eventCategory': sEventCategory,   // Required.
-			'eventAction': sEventAction,      // Required.
-			'eventLabel': sEventLabel
-			});
+		if(_g_bGtmGa4Activated) // GTM trigger GA4
+		{
+			_triggerDataLayer(sEventName, oEventInfo);  // warning; sEventName has been transmitted to GA4 GTM container
+		}
 	}
-	else
+	else  // JS API mode
 	{
-		nEventValue = _enforceInt(nEventValue);
-		ga('send', 'event',  {
-			'eventCategory': sEventCategory,   // Required.
-			'eventAction': sEventAction,      // Required.
-			'eventLabel': sEventLabel,
-			'eventValue': nEventValue // use number only, null string '' commits error.
-			});
-	}
-}
-
-function _sendGaEventWithoutInteraction(sEventLabel, nEventValue)
-{
-	//if(_g_bGtmIdLoaded)  // GTM dataLayer Mode에서 이벤트 전송하는 법 구현해야 함
-	//	return true;
-	// JS API mode
-	// send pageview 명령 전에 send event 명령을 수행하면 queue에 적재된 EC 관련 정보들이 send event와 함께 pop되어버림
-	// Send data using an event just after set ec-action
-	// GA4
-	if(_g_bGa4DatastreamIdLoaded)  
-	{
-		gtag('event', sEventLabel , {
-			currency: _g_sCurrency,
-			value: _enforceInt(nEventValue)
-		});
+		if(_g_bGa4DatastreamIdLoaded)  // GA4
+		{
+			gtag('event', sEventLabel, oEventInfo);  // warning; sEventLabel has been transmitted to GA4 JS API
+		}
 	}
 }
 
@@ -150,36 +142,33 @@ function _parseUrl(sElem)
 		return 'undefined';
 }
 
-function _triggerDataLayer(sEventName, oEcommerceInfo, oSvEventInfo)
+function _triggerDataLayer(sEventName, oSvEventInfo)  // oEcommerceInfo, oSvEventInfo)
 {
 	if(sEventName == null || sEventName === undefined || sEventName.length == 0)
 	{
 		console.log('denied to trigger GTM dataLayer - invalid event name!');
 		return;
 	}
-	try
+	// Clear the previous ecommerce object. combination with GTM data layer version 2
+	// window.dataLayer.push({});  // should replace
+	if(_g_aGa4ReservedEventName.includes(sEventName))  // GA4 reserved ecommerce event
 	{
-		var sEventLbl = oSvEventInfo.sv_event_lbl;	
+		// Clear the previous ecommerce object. combination with GTM data layer version 2
+		window.dataLayer.push({ecommerce: null});
+		window.dataLayer.push({
+			event: sEventName,
+			ecommerce: oSvEventInfo,
+		});
 	}
-	catch(e)
+	else  // other event
 	{
-		var sEventLbl = null;
+		// Clear the previous object. combination with GTM data layer version 2
+		window.dataLayer.push({sv_event_info: null});
+		window.dataLayer.push({
+			event: sEventName,
+			sv_event_info: oSvEventInfo
+		});
 	}
-	try
-	{
-		var sEventVal = oSvEventInfo.sv_event_val;	
-	}
-	catch(e)
-	{
-		var sEventVal = null;
-	}
-	window.dataLayer.push({ecommerce: null}); // Clear the previous ecommerce object. combination with GTM data layer version 2
-	window.dataLayer.push({
-		event: sEventName,
-		ecommerce: oEcommerceInfo,
-		sv_event_lbl: sEventLbl,
-		sv_event_val: sEventVal
-	});
 }
 
 var gaectkStorage = 
